@@ -67,7 +67,7 @@ export default function Inventory() {
     return null;
   }
 
-  const lowStockItems = items?.filter(item => item.quantity <= (item.minStock || 0)) || [];
+  const lowStockItems = items?.filter(item => item.quantity !== null && item.quantity <= (item.minStock || 0)) || [];
   const expiringItems = items?.filter(item => {
     if (!item.expiryDate) return false;
     const daysUntilExpiry = Math.floor((new Date(item.expiryDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
@@ -250,7 +250,7 @@ export default function Inventory() {
                 </TableHeader>
                 <TableBody>
                   {items.map((item) => {
-                    const isLowStock = item.quantity <= (item.minStock || 0);
+                    const isLowStock = item.quantity !== null && item.quantity <= (item.minStock || 0);
                     const daysUntilExpiry = item.expiryDate ? Math.floor((new Date(item.expiryDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
                     const isExpiringSoon = daysUntilExpiry !== null && daysUntilExpiry <= 30 && daysUntilExpiry >= 0;
                     

@@ -165,7 +165,7 @@ export default function Planning() {
                         variant="ghost"
                         size="icon"
                         className="shrink-0"
-                        onClick={() => toggleComplete.mutate({ id: event.id, completed: true })}
+                        onClick={() => toggleComplete.mutate({ id: event.id })}
                       >
                         <Circle className="w-5 h-5" />
                       </Button>

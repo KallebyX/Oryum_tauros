@@ -14,7 +14,7 @@ export default function Ranking() {
   const { data: farms } = trpc.farms.list.useQuery(undefined, { enabled: isAuthenticated });
   const myFarm = farms?.[0];
   
-  const { data: ranking, isLoading } = trpc.ranking.getTop.useQuery(undefined, { enabled: isAuthenticated });
+  const { data: ranking, isLoading } = trpc.ranking.getTop.useQuery({ limit: 10 }, { enabled: isAuthenticated });
 
   if (!isAuthenticated) {
     setLocation("/");
@@ -58,7 +58,7 @@ export default function Ranking() {
                   <p className="text-muted-foreground">{myFarm.name}</p>
                 </div>
                 <div className="text-right">
-                  <div className="text-2xl font-bold">{ranking?.[myPosition]?.totalPoints || 0}</div>
+                  <div className="text-2xl font-bold">{ranking?.[myPosition]?.score || 0}</div>
                   <p className="text-sm text-muted-foreground">pontos</p>
                 </div>
               </div>
@@ -110,7 +110,7 @@ export default function Ranking() {
                           {!entry.badgeLevel && <Badge variant="secondary">Sem selo</Badge>}
                         </TableCell>
                         <TableCell className="text-right font-bold text-primary">
-                          {entry.totalPoints}
+                          {entry.score}
                         </TableCell>
                       </TableRow>
                     );

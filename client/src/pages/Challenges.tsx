@@ -51,10 +51,10 @@ export default function Challenges() {
           </CardHeader>
           <CardContent>
             <div className="text-5xl font-bold text-primary">
-              {progress?.reduce((sum, p) => sum + (p.pointsEarned || 0), 0) || 0}
+              {progress?.reduce((sum: number, p: any) => sum + (p.pointsEarned || 0), 0) || 0}
             </div>
             <p className="text-sm text-muted-foreground mt-2">
-              {progress?.filter(p => p.completed).length || 0} desafios completados
+              {progress?.filter((p: any) => p.completed).length || 0} desafios completados
             </p>
           </CardContent>
         </Card>
@@ -65,7 +65,7 @@ export default function Challenges() {
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
           ) : challenges && challenges.length > 0 ? (
-            challenges.map((challenge) => {
+            challenges.map((challenge: any) => {
               const challengeProgress = getProgressForChallenge(challenge.id);
               const progressPercent = challengeProgress?.progressPercent || 0;
               const isCompleted = challengeProgress?.completed || false;

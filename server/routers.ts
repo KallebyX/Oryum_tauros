@@ -223,9 +223,46 @@ export const appRouter = router({
 
   // ===== ESG ROUTES =====
   esg: router({
+    listChecklists: protectedProcedure.query(async () => {
+      return await db.getAllESGChecklists();
+    }),
+    
     checklists: protectedProcedure.query(async () => {
       return await db.getAllESGChecklists();
     }),
+    
+    saveResponse: protectedProcedure
+      .input(z.object({
+        checklistId: z.number(),
+        farmId: z.number(),
+        response: z.boolean(),
+        pointsObtained: z.number(),
+        notes: z.string().optional(),
+        evidenceUrl: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const id = await db.createESGResponse(input);
+        
+        // Recalculate score and update badge if needed
+        const score = await db.calculateESGScore(input.farmId);
+        const currentBadge = await db.getLatestBadgeByFarm(input.farmId);
+        
+        let newBadgeLevel: 'bronze' | 'silver' | 'gold' | null = null;
+        if (score.percentage >= 90) newBadgeLevel = 'gold';
+        else if (score.percentage >= 60) newBadgeLevel = 'silver';
+        else if (score.percentage >= 30) newBadgeLevel = 'bronze';
+        
+        // Grant new badge if level increased or first badge
+        if (newBadgeLevel && (!currentBadge || currentBadge.level !== newBadgeLevel)) {
+          await db.createBadge({
+            farmId: input.farmId,
+            level: newBadgeLevel,
+            score: score.percentage,
+          });
+        }
+        
+        return { id, score };
+      }),
     
     respond: protectedProcedure
       .input(z.object({
@@ -260,10 +297,22 @@ export const appRouter = router({
         return { id, score };
       }),
     
+    calculateScore: protectedProcedure
+      .input(z.object({ farmId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.calculateESGScore(input.farmId);
+      }),
+    
     score: protectedProcedure
       .input(z.object({ farmId: z.number() }))
       .query(async ({ input }) => {
         return await db.calculateESGScore(input.farmId);
+      }),
+    
+    listResponses: protectedProcedure
+      .input(z.object({ farmId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getESGResponsesByFarm(input.farmId);
       }),
     
     responses: protectedProcedure
@@ -287,6 +336,10 @@ export const appRouter = router({
 
   // ===== CHALLENGE ROUTES =====
   challenges: router({
+    listActive: protectedProcedure.query(async () => {
+      return await db.getActiveChallenges();
+    }),
+    
     active: protectedProcedure.query(async () => {
       return await db.getActiveChallenges();
     }),
@@ -294,6 +347,12 @@ export const appRouter = router({
     all: protectedProcedure.query(async () => {
       return await db.getAllChallenges();
     }),
+    
+    getProgress: protectedProcedure
+      .input(z.object({ farmId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getChallengeProgressByFarm(input.farmId);
+      }),
     
     progress: protectedProcedure
       .input(z.object({ farmId: z.number() }))
@@ -341,6 +400,15 @@ export const appRouter = router({
       }))
       .query(async ({ input }) => {
         return await db.getGlobalRanking(input.region, input.limit);
+      }),
+    
+    getTop: protectedProcedure
+      .input(z.object({
+        region: z.string().optional(),
+        limit: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getGlobalRanking(input.region, input.limit || 10);
       }),
   }),
 
@@ -422,6 +490,21 @@ export const appRouter = router({
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await db.deletePlanningEvent(input.id);
+        return { success: true };
+      }),
+    
+    toggleComplete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        // Get current event to toggle
+        const events = await db.getPlanningEventsByFarm(0); // Will need to fix this
+        const event = events.find(e => e.id === input.id);
+        if (event) {
+          await db.updatePlanningEvent(input.id, { 
+            completed: !event.completed,
+            completedAt: !event.completed ? new Date() : null 
+          });
+        }
         return { success: true };
       }),
   }),

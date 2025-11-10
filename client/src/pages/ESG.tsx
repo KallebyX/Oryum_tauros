@@ -80,7 +80,7 @@ export default function ESG() {
               <div className="text-5xl font-bold text-green-600 mb-4">{score?.percentage || 0}%</div>
               <Progress value={score?.percentage || 0} className="h-3" />
               <p className="text-sm text-muted-foreground mt-2">
-                {score?.obtained || 0} de {score?.total || 0} pontos
+                {score?.score || 0} de {score?.maxScore || 0} pontos
               </p>
             </CardContent>
           </Card>
@@ -114,7 +114,7 @@ export default function ESG() {
               </div>
             ) : checklists && checklists.length > 0 ? (
               <div className="space-y-4">
-                {checklists.map((checklist) => {
+                {checklists.map((checklist: any) => {
                   const response = getResponse(checklist.id);
                   return (
                     <div key={checklist.id} className="flex items-start gap-3 p-4 border rounded-lg hover:bg-accent/50 transition-colors">

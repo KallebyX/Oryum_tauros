@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, decimal } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, date } from "drizzle-orm/mysql-core";
 import { relations } from "drizzle-orm";
 
 /**
@@ -332,3 +332,164 @@ export const planningEventsRelations = relations(planningEvents, ({ one }) => ({
     references: [farms.id],
   }),
 }));
+
+
+/**
+ * Animals table - individual animal tracking with RFID/tag
+ */
+export const animals = mysqlTable("animals", {
+  id: int("id").autoincrement().primaryKey(),
+  farmId: int("farmId").notNull(),
+  batchId: int("batchId"),
+  tagNumber: varchar("tagNumber", { length: 50 }).notNull(), // Brinco/RFID
+  name: varchar("name", { length: 100 }),
+  species: mysqlEnum("species", ["bovine_milk", "bovine_beef", "sheep", "goat", "buffalo", "other"]).notNull(),
+  breed: varchar("breed", { length: 100 }),
+  sex: mysqlEnum("sex", ["male", "female"]).notNull(),
+  birthDate: date("birthDate"),
+  birthWeight: int("birthWeight"), // kg
+  currentWeight: int("currentWeight"), // kg
+  motherId: int("motherId"), // Reference to mother animal
+  fatherId: int("fatherId"), // Reference to father animal
+  acquisitionDate: date("acquisitionDate"),
+  acquisitionType: mysqlEnum("acquisitionType", ["birth", "purchase", "transfer"]),
+  status: mysqlEnum("status", ["active", "sold", "deceased", "transferred"]).default("active"),
+  phase: mysqlEnum("phase", ["calf", "weaning", "growing", "fattening", "feedlot", "breeding", "lactation"]),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Animal = typeof animals.$inferSelect;
+export type InsertAnimal = typeof animals.$inferInsert;
+
+/**
+ * Animal weights table - weight history for GMD calculation
+ */
+export const animalWeights = mysqlTable("animal_weights", {
+  id: int("id").autoincrement().primaryKey(),
+  animalId: int("animalId").notNull(),
+  weight: int("weight").notNull(), // kg
+  date: date("date").notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type AnimalWeight = typeof animalWeights.$inferSelect;
+export type InsertAnimalWeight = typeof animalWeights.$inferInsert;
+
+/**
+ * Milk production table - daily milk production records
+ */
+export const milkProduction = mysqlTable("milk_production", {
+  id: int("id").autoincrement().primaryKey(),
+  animalId: int("animalId").notNull(),
+  farmId: int("farmId").notNull(),
+  date: date("date").notNull(),
+  liters: int("liters").notNull(), // Liters per day
+  lactationDay: int("lactationDay"), // Days since calving
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type MilkProduction = typeof milkProduction.$inferSelect;
+export type InsertMilkProduction = typeof milkProduction.$inferInsert;
+
+/**
+ * Vaccines table - vaccine catalog
+ */
+export const vaccines = mysqlTable("vaccines", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  type: mysqlEnum("type", ["brucellosis", "foot_mouth", "rabies", "clostridial", "leptospirosis", "bvd_ibr", "other"]).notNull(),
+  manufacturer: varchar("manufacturer", { length: 255 }),
+  dosage: varchar("dosage", { length: 100 }),
+  applicationMethod: varchar("applicationMethod", { length: 100 }),
+  withdrawalPeriod: int("withdrawalPeriod"), // days
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Vaccine = typeof vaccines.$inferSelect;
+export type InsertVaccine = typeof vaccines.$inferInsert;
+
+/**
+ * Animal vaccinations table - vaccination records
+ */
+export const animalVaccinations = mysqlTable("animal_vaccinations", {
+  id: int("id").autoincrement().primaryKey(),
+  animalId: int("animalId").notNull(),
+  vaccineId: int("vaccineId").notNull(),
+  date: date("date").notNull(),
+  nextDueDate: date("nextDueDate"),
+  batchNumber: varchar("batchNumber", { length: 100 }),
+  appliedBy: varchar("appliedBy", { length: 255 }),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type AnimalVaccination = typeof animalVaccinations.$inferSelect;
+export type InsertAnimalVaccination = typeof animalVaccinations.$inferInsert;
+
+/**
+ * Reproductive events table - breeding, insemination, pregnancy, calving
+ */
+export const reproductiveEvents = mysqlTable("reproductive_events", {
+  id: int("id").autoincrement().primaryKey(),
+  animalId: int("animalId").notNull(), // Female animal
+  eventType: mysqlEnum("eventType", ["heat", "insemination", "pregnancy_check", "calving", "abortion"]).notNull(),
+  date: date("date").notNull(),
+  bullId: int("bullId"), // Male animal or semen ID
+  semenCode: varchar("semenCode", { length: 100 }),
+  inseminationType: mysqlEnum("inseminationType", ["natural", "artificial"]),
+  pregnancyResult: boolean("pregnancyResult"),
+  calvingSex: mysqlEnum("calvingSex", ["male", "female"]),
+  calvingWeight: int("calvingWeight"),
+  calvingDifficulty: mysqlEnum("calvingDifficulty", ["normal", "assisted", "difficult"]),
+  calfId: int("calfId"), // Newborn animal ID
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ReproductiveEvent = typeof reproductiveEvents.$inferSelect;
+export type InsertReproductiveEvent = typeof reproductiveEvents.$inferInsert;
+
+/**
+ * Pastures table - pasture/paddock management
+ */
+export const pastures = mysqlTable("pastures", {
+  id: int("id").autoincrement().primaryKey(),
+  farmId: int("farmId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  areaHectares: int("areaHectares").notNull(),
+  grassType: varchar("grassType", { length: 100 }),
+  currentStockingRate: int("currentStockingRate"), // animals per hectare
+  maxStockingRate: int("maxStockingRate"),
+  status: mysqlEnum("status", ["active", "resting", "maintenance"]).default("active"),
+  lastRotationDate: date("lastRotationDate"),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Pasture = typeof pastures.$inferSelect;
+export type InsertPasture = typeof pastures.$inferInsert;
+
+/**
+ * Feed supplements table - feed and supplement tracking
+ */
+export const feedSupplements = mysqlTable("feed_supplements", {
+  id: int("id").autoincrement().primaryKey(),
+  farmId: int("farmId").notNull(),
+  batchId: int("batchId"),
+  animalId: int("animalId"),
+  date: date("date").notNull(),
+  feedType: mysqlEnum("feedType", ["concentrate", "silage", "hay", "mineral", "protein", "other"]).notNull(),
+  quantity: int("quantity").notNull(), // kg
+  cost: int("cost"), // cents
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type FeedSupplement = typeof feedSupplements.$inferSelect;
+export type InsertFeedSupplement = typeof feedSupplements.$inferInsert;
