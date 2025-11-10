@@ -429,26 +429,17 @@ export const appRouter = router({
     
     generate: protectedProcedure
       .input(z.object({ farmId: z.number() }))
-      .mutation(async ({ input }) => {
-        const aiRec = await import("./aiRecommendations");
-        return await aiRec.generateRecommendations(input.farmId);
-      }),
-    
-    generateESGSuggestions: protectedProcedure
-      .input(z.object({ farmId: z.number() }))
-      .mutation(async ({ input }) => {
-        const aiRec = await import("./aiRecommendations");
-        return await aiRec.generateESGSuggestions(input.farmId);
-      }),
-    
-    summarizeFinancialReport: protectedProcedure
-      .input(z.object({ 
-        farmId: z.number(),
-        period: z.string(),
-      }))
-      .mutation(async ({ input }) => {
-        const aiRec = await import("./aiRecommendations");
-        return await aiRec.summarizeFinancialReport(input.farmId, input.period);
+      .mutation(async ({ input, ctx }) => {
+        // This will be implemented with actual AI integration
+        // For now, create a placeholder
+        const id = await db.createAIRecommendation({
+          farmId: input.farmId,
+          type: 'general',
+          title: 'Recomendação Gerada',
+          content: 'Esta é uma recomendação de exemplo. A integração com IA será implementada.',
+          priority: 'medium',
+        });
+        return { id };
       }),
   }),
 
@@ -536,7 +527,6 @@ export const appRouter = router({
         return { id };
       }),
   }),
-
   // ===== STRIPE/SUBSCRIPTION ROUTES =====
   subscription: router({
     current: protectedProcedure.query(async ({ ctx }) => {
