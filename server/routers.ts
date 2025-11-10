@@ -106,6 +106,38 @@ export const appRouter = router({
         await db.deleteBatch(input.id);
         return { success: true };
       }),
+    
+    listAnimals: protectedProcedure
+      .input(z.object({ farmId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getAnimalsByFarmId(input.farmId);
+      }),
+    
+    createAnimal: protectedProcedure
+      .input(z.object({
+        farmId: z.number(),
+        tagId: z.string(),
+        species: z.enum(["cattle", "sheep", "goat", "buffalo"]),
+        breed: z.string().optional(),
+        birthDate: z.date(),
+        sex: z.enum(["male", "female"]),
+        batchId: z.number().optional().nullable(),
+      }))
+      .mutation(async ({ input }) => {
+        const animalId = await db.createAnimal(input);
+        return { animalId };
+      }),
+    
+    createWeighing: protectedProcedure
+      .input(z.object({
+        animalId: z.number(),
+        weight: z.number(),
+        date: z.date(),
+      }))
+      .mutation(async ({ input }) => {
+        const weighingId = await db.createWeighing(input);
+        return { weighingId };
+      }),
   }),
 
   financial: router({

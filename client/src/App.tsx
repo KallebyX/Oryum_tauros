@@ -9,6 +9,9 @@ import Dashboard from "./pages/Dashboard";
 import Onboarding from "./pages/Onboarding";
 import Financial from "./pages/Financial";
 import Inventory from "./pages/Inventory";
+import Planning from "./pages/Planning";
+import Animals from "./pages/Animals";
+import Pricing from "./pages/Pricing";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -19,6 +22,9 @@ function Router() {
       <Route path={"/dashboard"} component={Dashboard} />
       <Route path={"/financial"} component={Financial} />
       <Route path={"/inventory"} component={Inventory} />
+      <Route path={"/planning"} component={Planning} />
+      <Route path={"/animals"} component={Animals} />
+      <Route path={"/pricing"} component={Pricing} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

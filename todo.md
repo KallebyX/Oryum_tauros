@@ -97,12 +97,17 @@
 - [x] Corrigir erros TypeScript de farmId em Financial.tsx
 - [x] Corrigir erros TypeScript de farmId em Inventory.tsx
 - [x] Corrigir erro de useState duplicado em Onboarding.tsx
-- [ ] Implementar módulo de Planejamento (/planning)
-- [ ] Criar calendário de tarefas com categorização
-- [ ] Adicionar filtros por status (pendente/concluída)
-- [ ] Criar formulário para adicionar novas tarefas
-- [ ] Implementar página de Gestão de Animais (/animals)
-- [ ] Criar lista de animais individuais
-- [ ] Adicionar botão para registrar nova pesagem
-- [ ] Implementar cálculo automático de GMD
+- [x] Implementar módulo de Planejamento (/planning)
+- [x] Criar lista de tarefas com categorização (vacinação, pesagem, manejo)
+- [x] Adicionar filtros por status (pendente/concluída/atrasada)
+- [x] Criar formulário para adicionar novas tarefas com data e prioridade
+- [x] Adicionar alertas visuais para tarefas atrasadas
+- [x] Implementar página de Gestão de Animais (/animals)
+- [x] Criar tabela de animais individuais
+- [x] Adicionar modal para registrar nova pesagem
+- [x] Implementar cálculo automático de GMD
+- [x] Criar página de Pricing (/pricing)
+- [x] Adicionar cards dos 3 planos com preços
+- [x] Integrar botões de checkout com Stripe
+- [x] Adicionar indicador visual do plano atual
 - [ ] Testar todas as funcionalidades

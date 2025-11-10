@@ -182,7 +182,17 @@ export async function createAnimal(animal: InsertAnimal) {
 export async function getAnimalsByFarmId(farmId: number) {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(animals).where(eq(animals.farmId, farmId)).orderBy(desc(animals.createdAt));
+  const animalsList = await db.select().from(animals).where(eq(animals.farmId, farmId)).orderBy(desc(animals.createdAt));
+  
+  // Calcular GMD para cada animal
+  const animalsWithGMD = await Promise.all(
+    animalsList.map(async (animal) => {
+      const gmd = await calculateGMD(animal.id);
+      return { ...animal, gmd };
+    })
+  );
+  
+  return animalsWithGMD;
 }
 
 export async function getAnimalById(id: number) {
