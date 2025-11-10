@@ -51,8 +51,9 @@
 - [ ] Implementar formulário de cadastro de fazenda
 
 ## Fase 4: Dashboard e Módulos de Gestão
-- [ ] Criar dashboard principal com KPIs financeiros e ESG
-- [ ] Implementar gráficos de tendência (Recharts)
+- [x] Instalar biblioteca Recharts
+- [x] Criar dashboard principal com KPIs financeiros e ESG
+- [x] Implementar gráficos de tendência (Recharts)
 - [ ] Criar módulo de gestão financeira completo
 - [ ] Criar módulo de gestão de estoque
 - [ ] Criar módulo de planejamento e agenda
