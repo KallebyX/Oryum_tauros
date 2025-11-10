@@ -47,15 +47,22 @@
 - [x] Criar seção de features destacando módulos
 - [x] Adicionar seção de benefícios e estatísticas
 - [ ] Implementar página de pricing com Stripe
-- [ ] Criar página de onboarding para configuração inicial
-- [ ] Implementar formulário de cadastro de fazenda
+- [x] Criar página de onboarding para configuração inicial
+- [x] Implementar formulário de cadastro de fazenda com validação
+- [x] Adicionar redirecionamento automático para dashboard
 
 ## Fase 4: Dashboard e Módulos de Gestão
 - [x] Instalar biblioteca Recharts
 - [x] Criar dashboard principal com KPIs financeiros e ESG
 - [x] Implementar gráficos de tendência (Recharts)
-- [ ] Criar módulo de gestão financeira completo
-- [ ] Criar módulo de gestão de estoque
+- [x] Criar módulo de gestão financeira completo
+- [x] Implementar lista de transações com filtros
+- [x] Criar formulário para adicionar nova transação
+- [x] Adicionar cards de resumo mensal
+- [x] Criar módulo de gestão de estoque
+- [x] Implementar cards de itens com alertas visuais
+- [x] Criar formulário para adicionar/atualizar itens
+- [x] Adicionar histórico de movimentações
 - [ ] Criar módulo de planejamento e agenda
 - [ ] Criar página de gestão de animais individuais
 - [ ] Criar página de registro de pesagens
