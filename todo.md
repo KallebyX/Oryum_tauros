@@ -20,6 +20,7 @@
 - [x] Executar migrations do banco
 
 ## Fase 2: Backend - Endpoints tRPC
+- [x] Implementar routers tRPC completos
 - [ ] Implementar CRUD de fazendas
 - [ ] Implementar CRUD de transações financeiras
 - [ ] Implementar CRUD de estoque com alertas
@@ -41,10 +42,10 @@
 - [ ] Implementar exportação de relatórios (PDF/CSV)
 
 ## Fase 3: Landing Page e Onboarding
-- [ ] Criar landing page profissional com tema verde agricultura
-- [ ] Implementar seção hero com CTA
-- [ ] Criar seção de features destacando módulos
-- [ ] Adicionar seção de benefícios e estatísticas
+- [x] Criar landing page profissional com tema verde agricultura
+- [x] Implementar seção hero com CTA
+- [x] Criar seção de features destacando módulos
+- [x] Adicionar seção de benefícios e estatísticas
 - [ ] Implementar página de pricing com Stripe
 - [ ] Criar página de onboarding para configuração inicial
 - [ ] Implementar formulário de cadastro de fazenda
