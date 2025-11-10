@@ -1,11 +1,20 @@
-import { eq } from "drizzle-orm";
+import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { 
+  InsertUser, users, farms, InsertFarm, batches, InsertBatch,
+  animals, InsertAnimal, weighings, InsertWeighing,
+  milkProduction, InsertMilkProduction, financialTransactions, InsertFinancialTransaction,
+  inventoryItems, InsertInventoryItem, reproductiveEvents, InsertReproductiveEvent,
+  vaccinations, InsertVaccination, pastures, InsertPasture,
+  supplementation, InsertSupplementation, esgChecklists, InsertESGChecklist,
+  esgResponses, InsertESGResponse, badges, InsertBadge,
+  challenges, InsertChallenge, challengeProgress, InsertChallengeProgress,
+  aiRecommendations, InsertAIRecommendation, planningTasks, InsertPlanningTask
+} from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
-// Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
@@ -17,6 +26,8 @@ export async function getDb() {
   }
   return _db;
 }
+
+// ========== USER HELPERS ==========
 
 export async function upsertUser(user: InsertUser): Promise<void> {
   if (!user.openId) {
@@ -59,6 +70,14 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       values.role = 'admin';
       updateSet.role = 'admin';
     }
+    if (user.farmId !== undefined) {
+      values.farmId = user.farmId;
+      updateSet.farmId = user.farmId;
+    }
+    if (user.language !== undefined) {
+      values.language = user.language;
+      updateSet.language = user.language;
+    }
 
     if (!values.lastSignedIn) {
       values.lastSignedIn = new Date();
@@ -79,14 +98,506 @@ export async function upsertUser(user: InsertUser): Promise<void> {
 
 export async function getUserByOpenId(openId: string) {
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get user: database not available");
-    return undefined;
-  }
-
+  if (!db) return undefined;
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
-
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+export async function updateUserFarm(userId: number, farmId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set({ farmId }).where(eq(users.id, userId));
+}
+
+// ========== FARM HELPERS ==========
+
+export async function createFarm(farm: InsertFarm) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(farms).values(farm);
+  return result[0].insertId;
+}
+
+export async function getFarmById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(farms).where(eq(farms.id, id)).limit(1);
+  return result[0];
+}
+
+export async function getFarmsByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(farms).where(eq(farms.userId, userId));
+}
+
+export async function updateFarm(id: number, data: Partial<InsertFarm>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(farms).set(data).where(eq(farms.id, id));
+}
+
+export async function deleteFarm(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(farms).where(eq(farms.id, id));
+}
+
+// ========== BATCH HELPERS ==========
+
+export async function createBatch(batch: InsertBatch) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(batches).values(batch);
+  return result[0].insertId;
+}
+
+export async function getBatchesByFarmId(farmId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(batches).where(eq(batches.farmId, farmId)).orderBy(desc(batches.createdAt));
+}
+
+export async function updateBatch(id: number, data: Partial<InsertBatch>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(batches).set(data).where(eq(batches.id, id));
+}
+
+export async function deleteBatch(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(batches).where(eq(batches.id, id));
+}
+
+// ========== ANIMAL HELPERS ==========
+
+export async function createAnimal(animal: InsertAnimal) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(animals).values(animal);
+  return result[0].insertId;
+}
+
+export async function getAnimalsByFarmId(farmId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(animals).where(eq(animals.farmId, farmId)).orderBy(desc(animals.createdAt));
+}
+
+export async function getAnimalById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(animals).where(eq(animals.id, id)).limit(1);
+  return result[0];
+}
+
+export async function updateAnimal(id: number, data: Partial<InsertAnimal>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(animals).set(data).where(eq(animals.id, id));
+}
+
+// ========== WEIGHING HELPERS ==========
+
+export async function createWeighing(weighing: InsertWeighing) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(weighings).values(weighing);
+  
+  await db.update(animals).set({ currentWeight: weighing.weight }).where(eq(animals.id, weighing.animalId));
+  
+  return result[0].insertId;
+}
+
+export async function getWeighingsByAnimalId(animalId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(weighings).where(eq(weighings.animalId, animalId)).orderBy(desc(weighings.date));
+}
+
+export async function calculateGMD(animalId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const weighingsList = await db.select().from(weighings)
+    .where(eq(weighings.animalId, animalId))
+    .orderBy(weighings.date);
+  
+  if (weighingsList.length < 2) return null;
+  
+  const first = weighingsList[0];
+  const last = weighingsList[weighingsList.length - 1];
+  
+  const weightDiff = last.weight - first.weight;
+  const daysDiff = Math.floor((new Date(last.date).getTime() - new Date(first.date).getTime()) / (1000 * 60 * 60 * 24));
+  
+  if (daysDiff === 0) return null;
+  
+  return weightDiff / daysDiff;
+}
+
+// ========== MILK PRODUCTION HELPERS ==========
+
+export async function createMilkProduction(production: InsertMilkProduction) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(milkProduction).values(production);
+  return result[0].insertId;
+}
+
+export async function getMilkProductionByFarmId(farmId: number, startDate?: Date, endDate?: Date) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const allProduction = await db.select().from(milkProduction)
+    .where(eq(milkProduction.farmId, farmId))
+    .orderBy(desc(milkProduction.date));
+  
+  if (startDate && endDate) {
+    return allProduction.filter(p => {
+      const pDate = new Date(p.date);
+      return pDate >= startDate && pDate <= endDate;
+    });
+  }
+  
+  return allProduction;
+}
+
+// ========== FINANCIAL TRANSACTION HELPERS ==========
+
+export async function createTransaction(transaction: InsertFinancialTransaction) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(financialTransactions).values(transaction);
+  return result[0].insertId;
+}
+
+export async function getTransactionsByFarmId(farmId: number, startDate?: Date, endDate?: Date) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const allTransactions = await db.select().from(financialTransactions)
+    .where(eq(financialTransactions.farmId, farmId))
+    .orderBy(desc(financialTransactions.date));
+  
+  if (startDate && endDate) {
+    return allTransactions.filter(t => {
+      const tDate = new Date(t.date);
+      return tDate >= startDate && tDate <= endDate;
+    });
+  }
+  
+  return allTransactions;
+}
+
+export async function updateTransaction(id: number, data: Partial<InsertFinancialTransaction>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(financialTransactions).set(data).where(eq(financialTransactions.id, id));
+}
+
+export async function deleteTransaction(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(financialTransactions).where(eq(financialTransactions.id, id));
+}
+
+export async function getFinancialSummary(farmId: number, startDate?: Date, endDate?: Date) {
+  const db = await getDb();
+  if (!db) return { income: 0, expense: 0, balance: 0 };
+  
+  const transactions = await getTransactionsByFarmId(farmId, startDate, endDate);
+  
+  const income = transactions
+    .filter(t => t.type === 'income')
+    .reduce((sum, t) => sum + t.amount, 0);
+  
+  const expense = transactions
+    .filter(t => t.type === 'expense')
+    .reduce((sum, t) => sum + t.amount, 0);
+  
+  return {
+    income,
+    expense,
+    balance: income - expense
+  };
+}
+
+// ========== INVENTORY HELPERS ==========
+
+export async function createInventoryItem(item: InsertInventoryItem) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(inventoryItems).values(item);
+  return result[0].insertId;
+}
+
+export async function getInventoryByFarmId(farmId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(inventoryItems)
+    .where(eq(inventoryItems.farmId, farmId))
+    .orderBy(desc(inventoryItems.createdAt));
+}
+
+export async function updateInventoryItem(id: number, data: Partial<InsertInventoryItem>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(inventoryItems).set(data).where(eq(inventoryItems.id, id));
+}
+
+export async function deleteInventoryItem(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(inventoryItems).where(eq(inventoryItems.id, id));
+}
+
+export async function getLowStockItems(farmId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(inventoryItems)
+    .where(and(
+      eq(inventoryItems.farmId, farmId),
+      sql`${inventoryItems.quantity} <= ${inventoryItems.minStock}`
+    ));
+}
+
+// ========== ESG HELPERS ==========
+
+export async function getActiveChecklists() {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(esgChecklists)
+    .where(eq(esgChecklists.isActive, true))
+    .orderBy(esgChecklists.category);
+}
+
+export async function createESGResponse(response: InsertESGResponse) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(esgResponses).values(response);
+  return result[0].insertId;
+}
+
+export async function getESGResponsesByFarmId(farmId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(esgResponses)
+    .where(eq(esgResponses.farmId, farmId))
+    .orderBy(desc(esgResponses.respondedAt));
+}
+
+export async function calculateESGScore(farmId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+  
+  const responses = await getESGResponsesByFarmId(farmId);
+  const checklists = await getActiveChecklists();
+  
+  const totalPoints = responses.reduce((sum, r) => sum + r.pointsObtained, 0);
+  const maxPoints = checklists.reduce((sum, c) => sum + c.maxPoints, 0);
+  
+  if (maxPoints === 0) return 0;
+  
+  return Math.round((totalPoints / maxPoints) * 100);
+}
+
+export async function awardBadge(farmId: number, score: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  let level: "bronze" | "silver" | "gold" | null = null;
+  
+  if (score >= 90) level = "gold";
+  else if (score >= 60) level = "silver";
+  else if (score >= 30) level = "bronze";
+  
+  if (!level) return;
+  
+  const badge: InsertBadge = {
+    farmId,
+    level,
+    score,
+    awardedAt: new Date(),
+    validUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+  };
+  
+  await db.insert(badges).values(badge);
+}
+
+export async function getBadgesByFarmId(farmId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(badges)
+    .where(eq(badges.farmId, farmId))
+    .orderBy(desc(badges.awardedAt));
+}
+
+// ========== CHALLENGE HELPERS ==========
+
+export async function getActiveChallenges() {
+  const db = await getDb();
+  if (!db) return [];
+  const today = new Date();
+  const allChallenges = await db.select().from(challenges)
+    .where(eq(challenges.isActive, true))
+    .orderBy(desc(challenges.startDate));
+  
+  return allChallenges.filter(c => {
+    const start = new Date(c.startDate);
+    const end = new Date(c.endDate);
+    return start <= today && end >= today;
+  });
+}
+
+export async function getChallengeProgress(farmId: number, challengeId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(challengeProgress)
+    .where(and(
+      eq(challengeProgress.farmId, farmId),
+      eq(challengeProgress.challengeId, challengeId)
+    ))
+    .limit(1);
+  return result[0];
+}
+
+export async function updateChallengeProgress(farmId: number, challengeId: number, progress: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const existing = await getChallengeProgress(farmId, challengeId);
+  
+  if (existing) {
+    await db.update(challengeProgress)
+      .set({ 
+        progressPercent: progress,
+        completed: progress >= 100,
+        completedAt: progress >= 100 ? new Date() : null
+      })
+      .where(eq(challengeProgress.id, existing.id));
+  } else {
+    await db.insert(challengeProgress).values({
+      farmId,
+      challengeId,
+      progressPercent: progress,
+      completed: progress >= 100,
+      completedAt: progress >= 100 ? new Date() : undefined
+    });
+  }
+}
+
+export async function getRanking(region?: string) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const allFarms = await db.select().from(farms);
+  
+  const ranking = await Promise.all(
+    allFarms.map(async (farm) => {
+      const score = await calculateESGScore(farm.id);
+      return {
+        farmId: farm.id,
+        farmName: farm.name,
+        region: farm.region,
+        score
+      };
+    })
+  );
+  
+  const filtered = region 
+    ? ranking.filter(r => r.region === region)
+    : ranking;
+  
+  return filtered.sort((a, b) => b.score - a.score);
+}
+
+// ========== AI RECOMMENDATION HELPERS ==========
+
+export async function createAIRecommendation(recommendation: InsertAIRecommendation) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(aiRecommendations).values(recommendation);
+  return result[0].insertId;
+}
+
+export async function getAIRecommendationsByFarmId(farmId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(aiRecommendations)
+    .where(eq(aiRecommendations.farmId, farmId))
+    .orderBy(desc(aiRecommendations.generatedAt))
+    .limit(10);
+}
+
+// ========== PLANNING HELPERS ==========
+
+export async function createPlanningTask(task: InsertPlanningTask) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(planningTasks).values(task);
+  return result[0].insertId;
+}
+
+export async function getPlanningTasksByFarmId(farmId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(planningTasks)
+    .where(eq(planningTasks.farmId, farmId))
+    .orderBy(planningTasks.dueDate);
+}
+
+export async function toggleTaskComplete(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const task = await db.select().from(planningTasks).where(eq(planningTasks.id, id)).limit(1);
+  if (!task[0]) return;
+  
+  await db.update(planningTasks)
+    .set({ 
+      completed: !task[0].completed,
+      completedAt: !task[0].completed ? new Date() : null
+    })
+    .where(eq(planningTasks.id, id));
+}
+
+export async function deletePlanningTask(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(planningTasks).where(eq(planningTasks.id, id));
+}
+
+// ========== DASHBOARD KPIs ==========
+
+export async function getDashboardKPIs(farmId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const farm = await getFarmById(farmId);
+  if (!farm) return null;
+  
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const financial = await getFinancialSummary(farmId, thirtyDaysAgo);
+  
+  const esgScore = await calculateESGScore(farmId);
+  
+  const animalsList = await getAnimalsByFarmId(farmId);
+  const activeAnimals = animalsList.filter(a => a.status === 'active').length;
+  
+  const lowStock = await getLowStockItems(farmId);
+  
+  const tasks = await getPlanningTasksByFarmId(farmId);
+  const pendingTasks = tasks.filter(t => !t.completed && new Date(t.dueDate) >= new Date()).length;
+  
+  return {
+    farm,
+    financial,
+    esgScore,
+    activeAnimals,
+    lowStockCount: lowStock.length,
+    pendingTasks
+  };
+}
