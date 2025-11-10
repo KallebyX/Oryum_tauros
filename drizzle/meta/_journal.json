@@ -50,6 +50,20 @@
       "when": 1762816228941,
       "tag": "0006_vengeful_the_fallen",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1762818785982,
+      "tag": "0007_absurd_odin",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1762818976089,
+      "tag": "0008_flashy_matthew_murdock",
+      "breakpoints": true
     }
   ]
 }

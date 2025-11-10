@@ -111,3 +111,29 @@
 - [x] Integrar botões de checkout com Stripe
 - [x] Adicionar indicador visual do plano atual
 - [ ] Testar todas as funcionalidades
+
+## Novas Funcionalidades Implementadas
+
+- [x] Implementar módulo ESG completo (/esg)
+- [x] Criar checklist interativo ESG com categorias (Ambiental, Social, Governança)
+- [x] Implementar sistema de pontuação em tempo real
+- [x] Adicionar badges Bronze/Prata/Ouro baseados no score
+- [x] Criar indicadores visuais de progresso ESG
+
+- [x] Implementar sistema de Gamificação
+- [x] Criar página de Desafios (/challenges)
+- [x] Adicionar desafios mensais com categorias
+- [x] Implementar progresso visual de desafios
+- [x] Criar sistema de pontos e recompensas
+- [x] Criar página de Ranking (/ranking)
+- [x] Implementar ranking regional e nacional
+- [x] Adicionar filtros por região
+- [x] Mostrar Top 10 produtores
+- [x] Destacar posição do usuário atual
+
+- [x] Implementar integração Stripe real
+- [x] Criar endpoints subscription.createCheckout
+- [x] Criar endpoint subscription.current
+- [x] Adicionar tabela subscriptions no banco de dados
+- [x] Integrar Pricing com Stripe checkout real
+- [x] Adicionar verificação de plano atual do usuário

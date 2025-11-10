@@ -75,16 +75,22 @@ export default function Pricing() {
   const { user, isAuthenticated } = useAuth();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
-  // TODO: Implementar endpoints de subscription no backend
-  const currentSubscription = null; // Placeholder até implementar backend
+  const { data: currentSubscription } = trpc.subscription.current.useQuery(
+    undefined,
+    { enabled: isAuthenticated }
+  );
 
-  const createCheckout = {
-    mutate: (params: { priceId: string }) => {
-      // Placeholder: redirecionar para Stripe checkout manualmente
-      toast.info("Integração Stripe em desenvolvimento. Plano: " + params.priceId);
+  const createCheckout = trpc.subscription.createCheckout.useMutation({
+    onSuccess: (data) => {
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    },
+    onError: (error: any) => {
+      toast.error(`Erro ao criar checkout: ${error.message}`);
       setLoadingPlan(null);
     },
-  };
+  });
 
   const handleSubscribe = (planId: string, priceId: string) => {
     if (!isAuthenticated) {
@@ -93,14 +99,11 @@ export default function Pricing() {
     }
 
     setLoadingPlan(planId);
-    // TODO: Implementar criação de checkout session do Stripe
-    toast.info(`Plano selecionado: ${planId}. Integração Stripe será implementada.`);
-    setTimeout(() => setLoadingPlan(null), 1000);
+    createCheckout.mutate({ priceId });
   };
 
   const isCurrentPlan = (planId: string) => {
-    // TODO: Implementar verificação de plano atual
-    return false;
+    return currentSubscription?.planId === planId && currentSubscription?.status === "active";
   };
 
   return (

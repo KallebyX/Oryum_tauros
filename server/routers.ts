@@ -267,6 +267,48 @@ export const appRouter = router({
       return await db.getActiveChecklists();
     }),
     
+    listChecklists: protectedProcedure
+      .input(z.object({ farmId: z.number() }))
+      .query(async () => {
+        return await db.getActiveChecklists();
+      }),
+    
+    listResponses: protectedProcedure
+      .input(z.object({ farmId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getESGResponsesByFarmId(input.farmId);
+      }),
+    
+    answerQuestion: protectedProcedure
+      .input(z.object({
+        farmId: z.number(),
+        checklistId: z.number(),
+        answer: z.boolean(),
+      }))
+      .mutation(async ({ input }) => {
+        const checklist = await db.getChecklistById(input.checklistId);
+        if (!checklist) throw new Error("Checklist not found");
+        
+        const responseId = await db.createESGResponse({
+          farmId: input.farmId,
+          checklistId: input.checklistId,
+          response: input.answer,
+          pointsObtained: input.answer ? checklist.maxPoints : 0,
+        });
+        
+        const score = await db.calculateESGScore(input.farmId);
+        await db.awardBadge(input.farmId, score);
+        
+        return { responseId, score };
+      }),
+    
+    getBadge: protectedProcedure
+      .input(z.object({ farmId: z.number() }))
+      .query(async ({ input }) => {
+        const badges = await db.getBadgesByFarmId(input.farmId);
+        return badges[0] || null;
+      }),
+    
     respond: protectedProcedure
       .input(z.object({
         checklistId: z.number(),
@@ -299,6 +341,38 @@ export const appRouter = router({
     active: protectedProcedure.query(async () => {
       return await db.getActiveChallenges();
     }),
+    
+    list: protectedProcedure
+      .input(z.object({ farmId: z.number() }))
+      .query(async () => {
+        return await db.getActiveChallenges();
+      }),
+    
+    listProgress: protectedProcedure
+      .input(z.object({ farmId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getChallengeProgressByFarmId(input.farmId);
+      }),
+    
+    start: protectedProcedure
+      .input(z.object({
+        farmId: z.number(),
+        challengeId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        await db.startChallenge(input.farmId, input.challengeId);
+        return { success: true };
+      }),
+    
+    complete: protectedProcedure
+      .input(z.object({
+        farmId: z.number(),
+        challengeId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        await db.completeChallenge(input.farmId, input.challengeId);
+        return { success: true };
+      }),
     
     progress: protectedProcedure
       .input(z.object({
@@ -373,6 +447,33 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         await db.deletePlanningTask(input.id);
         return { success: true };
+      }),
+  }),
+  
+  subscription: router({
+    current: protectedProcedure.query(async ({ ctx }) => {
+      const subscription = await db.getSubscriptionByUserId(ctx.user.id);
+      return subscription;
+    }),
+    
+    createCheckout: protectedProcedure
+      .input(z.object({
+        priceId: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { createCheckoutSession } = await import("./_core/stripe");
+        
+        const baseUrl = process.env.VITE_FRONTEND_FORGE_API_URL || "http://localhost:3000";
+        
+        const session = await createCheckoutSession({
+          priceId: input.priceId,
+          userId: ctx.user.id,
+          userEmail: ctx.user.email || undefined,
+          successUrl: `${baseUrl}/pricing?success=true`,
+          cancelUrl: `${baseUrl}/pricing?canceled=true`,
+        });
+        
+        return { url: session.url };
       }),
   }),
 });

@@ -12,6 +12,9 @@ import Inventory from "./pages/Inventory";
 import Planning from "./pages/Planning";
 import Animals from "./pages/Animals";
 import Pricing from "./pages/Pricing";
+import ESG from "./pages/ESG";
+import Challenges from "./pages/Challenges";
+import Ranking from "./pages/Ranking";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -25,6 +28,9 @@ function Router() {
       <Route path={"/planning"} component={Planning} />
       <Route path={"/animals"} component={Animals} />
       <Route path={"/pricing"} component={Pricing} />
+      <Route path={"/esg"} component={ESG} />
+      <Route path={"/challenges"} component={Challenges} />
+      <Route path={"/ranking"} component={Ranking} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

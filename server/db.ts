@@ -9,7 +9,8 @@ import {
   supplementation, InsertSupplementation, esgChecklists, InsertESGChecklist,
   esgResponses, InsertESGResponse, badges, InsertBadge,
   challenges, InsertChallenge, challengeProgress, InsertChallengeProgress,
-  aiRecommendations, InsertAIRecommendation, planningTasks, InsertPlanningTask
+  aiRecommendations, InsertAIRecommendation, planningTasks, InsertPlanningTask,
+  subscriptions, InsertSubscription
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -383,6 +384,13 @@ export async function getActiveChecklists() {
     .orderBy(esgChecklists.category);
 }
 
+export async function getChecklistById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(esgChecklists).where(eq(esgChecklists.id, id)).limit(1);
+  return result[0];
+}
+
 export async function createESGResponse(response: InsertESGResponse) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -473,6 +481,63 @@ export async function getChallengeProgress(farmId: number, challengeId: number) 
   return result[0];
 }
 
+export async function getChallengeProgressByFarmId(farmId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(challengeProgress)
+    .where(eq(challengeProgress.farmId, farmId));
+}
+
+export async function startChallenge(farmId: number, challengeId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const existing = await getChallengeProgress(farmId, challengeId);
+  if (existing) {
+    throw new Error("Challenge already started");
+  }
+  
+  const challenge = await db.select().from(challenges).where(eq(challenges.id, challengeId)).limit(1);
+  if (!challenge[0]) {
+    throw new Error("Challenge not found");
+  }
+  
+  await db.insert(challengeProgress).values({
+    farmId,
+    challengeId,
+    progressPercent: 0,
+    completed: false,
+    pointsEarned: 0,
+  });
+}
+
+export async function completeChallenge(farmId: number, challengeId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const existing = await getChallengeProgress(farmId, challengeId);
+  if (!existing) {
+    throw new Error("Challenge not started");
+  }
+  
+  if (existing.completed) {
+    throw new Error("Challenge already completed");
+  }
+  
+  const challenge = await db.select().from(challenges).where(eq(challenges.id, challengeId)).limit(1);
+  if (!challenge[0]) {
+    throw new Error("Challenge not found");
+  }
+  
+  await db.update(challengeProgress)
+    .set({
+      completed: true,
+      completedAt: new Date(),
+      pointsEarned: challenge[0].points,
+    })
+    .where(eq(challengeProgress.id, existing.id));
+}
+
 export async function updateChallengeProgress(farmId: number, challengeId: number, progress: number) {
   const db = await getDb();
   if (!db) return;
@@ -506,12 +571,24 @@ export async function getRanking(region?: string) {
   
   const ranking = await Promise.all(
     allFarms.map(async (farm) => {
-      const score = await calculateESGScore(farm.id);
+      const esgScore = await calculateESGScore(farm.id);
+      const progress = await getChallengeProgressByFarmId(farm.id);
+      const challengesCompleted = progress.filter(p => p.completed).length;
+      const totalPoints = progress.reduce((sum, p) => sum + (p.pointsEarned || 0), 0) + esgScore;
+      
+      let esgBadge = "Sem Selo";
+      if (esgScore >= 90) esgBadge = "Ouro";
+      else if (esgScore >= 60) esgBadge = "Prata";
+      else if (esgScore >= 30) esgBadge = "Bronze";
+      
       return {
         farmId: farm.id,
         farmName: farm.name,
         region: farm.region,
-        score
+        totalPoints,
+        challengesCompleted,
+        esgBadge,
+        esgScore,
       };
     })
   );
@@ -520,7 +597,12 @@ export async function getRanking(region?: string) {
     ? ranking.filter(r => r.region === region)
     : ranking;
   
-  return filtered.sort((a, b) => b.score - a.score);
+  const sorted = filtered.sort((a, b) => b.totalPoints - a.totalPoints);
+  
+  return sorted.map((entry, index) => ({
+    ...entry,
+    position: index + 1,
+  }));
 }
 
 // ========== AI RECOMMENDATION HELPERS ==========
@@ -610,4 +692,46 @@ export async function getDashboardKPIs(farmId: number) {
     lowStockCount: lowStock.length,
     pendingTasks
   };
+}
+
+// ========== SUBSCRIPTION HELPERS ==========
+
+export async function createSubscription(subscription: InsertSubscription) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(subscriptions).values(subscription);
+  return result[0].insertId;
+}
+
+export async function getSubscriptionByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(subscriptions)
+    .where(eq(subscriptions.userId, userId))
+    .orderBy(desc(subscriptions.createdAt))
+    .limit(1);
+  return result[0];
+}
+
+export async function getSubscriptionByStripeId(stripeSubscriptionId: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(subscriptions)
+    .where(eq(subscriptions.stripeSubscriptionId, stripeSubscriptionId))
+    .limit(1);
+  return result[0];
+}
+
+export async function updateSubscription(id: number, data: Partial<InsertSubscription>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(subscriptions).set(data).where(eq(subscriptions.id, id));
+}
+
+export async function cancelSubscription(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(subscriptions)
+    .set({ status: "canceled", cancelAtPeriodEnd: 1 })
+    .where(eq(subscriptions.id, id));
 }

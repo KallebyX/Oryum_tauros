@@ -1,0 +1,1 @@
+ALTER TABLE `challenges` ADD `category` enum('financial','esg','production','management') DEFAULT 'production';
