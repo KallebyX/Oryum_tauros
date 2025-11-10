@@ -43,6 +43,13 @@
       "when": 1762815708400,
       "tag": "0005_aromatic_yellow_claw",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1762816228941,
+      "tag": "0006_vengeful_the_fallen",
+      "breakpoints": true
     }
   ]
 }
