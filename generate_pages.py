@@ -1,4 +1,10 @@
-import { useAuth } from "@/_core/hooks/useAuth";
+#!/usr/bin/env python3
+import os
+
+pages_dir = "/home/ubuntu/oryum-tauros/client/src/pages"
+
+# Financial Page
+financial_content = '''import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -260,3 +266,9 @@ export default function Financial() {
     </div>
   );
 }
+'''
+
+with open(os.path.join(pages_dir, "Financial.tsx"), "w") as f:
+    f.write(financial_content)
+
+print("Financial.tsx created")
