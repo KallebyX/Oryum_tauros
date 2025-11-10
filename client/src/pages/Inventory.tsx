@@ -1,12 +1,15 @@
 import { useState } from "react";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
+import { skipToken } from "@tanstack/react-query";
 import { AlertTriangle, Package, Plus } from "lucide-react";
 
 export default function Inventory() {
+  const { user } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -16,7 +19,7 @@ export default function Inventory() {
     minStock: "",
   });
 
-  const { data: items, refetch } = trpc.inventory.list.useQuery();
+  const { data: items, refetch } = trpc.inventory.list.useQuery(user?.farmId ? { farmId: user.farmId } : skipToken);
   const createItem = trpc.inventory.create.useMutation({
     onSuccess: () => {
       refetch();
@@ -27,7 +30,9 @@ export default function Inventory() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user?.farmId) return;
     createItem.mutate({
+      farmId: user.farmId,
       name: formData.name,
       type: "other" as const,
       quantity: parseInt(formData.quantity),

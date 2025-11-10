@@ -1,13 +1,16 @@
 import { useState } from "react";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
+import { skipToken } from "@tanstack/react-query";
 import { ArrowDownCircle, ArrowUpCircle, DollarSign, Plus } from "lucide-react";
 
 export default function Financial() {
+  const { user } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     type: "income" as "income" | "expense",
@@ -17,7 +20,7 @@ export default function Financial() {
     date: new Date().toISOString().split('T')[0],
   });
 
-  const { data: transactions, refetch } = trpc.financial.list.useQuery();
+  const { data: transactions, refetch } = trpc.financial.list.useQuery(user?.farmId ? { farmId: user.farmId } : skipToken);
   const createTransaction = trpc.financial.create.useMutation({
     onSuccess: () => {
       refetch();
@@ -28,7 +31,9 @@ export default function Financial() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user?.farmId) return;
     createTransaction.mutate({
+      farmId: user.farmId,
       type: formData.type,
       category: formData.category,
       amount: parseFloat(formData.amount),

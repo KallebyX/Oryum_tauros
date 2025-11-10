@@ -91,3 +91,18 @@
 - [ ] Testar integração Stripe
 - [ ] Criar documentação do projeto
 - [ ] Criar checkpoint final funcional
+
+
+## Correções e Novas Funcionalidades
+- [x] Corrigir erros TypeScript de farmId em Financial.tsx
+- [x] Corrigir erros TypeScript de farmId em Inventory.tsx
+- [x] Corrigir erro de useState duplicado em Onboarding.tsx
+- [ ] Implementar módulo de Planejamento (/planning)
+- [ ] Criar calendário de tarefas com categorização
+- [ ] Adicionar filtros por status (pendente/concluída)
+- [ ] Criar formulário para adicionar novas tarefas
+- [ ] Implementar página de Gestão de Animais (/animals)
+- [ ] Criar lista de animais individuais
+- [ ] Adicionar botão para registrar nova pesagem
+- [ ] Implementar cálculo automático de GMD
+- [ ] Testar todas as funcionalidades
