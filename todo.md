@@ -76,3 +76,9 @@
 - [x] Implementar checkout Stripe
 - [x] Criar webhook para processar eventos Stripe
 - [ ] Testar fluxo de pagamento completo
+
+
+## Bug Crítico - Pricing.tsx
+- [x] Corrigir erro "process is not defined" na linha 27 do Pricing.tsx
+- [ ] Testar carregamento de todas as páginas
+- [ ] Verificar todas as rotas estão funcionando
