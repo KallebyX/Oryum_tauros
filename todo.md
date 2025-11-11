@@ -401,10 +401,10 @@
 
 ### Sistema de Alertas Customizáveis
 - [x] Adicionar funções CRUD de alertas ao db.ts
-- [ ] Criar router de alertas no routers.ts
-- [ ] Criar página /alerts com formulário
-- [ ] Adicionar lista de alertas com toggle on/off
-- [ ] Integrar verificação de alertas no job diário
+- [x] Criar router de alertas no routers.ts
+- [x] Criar página /alerts com formulário
+- [x] Adicionar lista de alertas com toggle on/off
+- [x] Integrar verificação de alertas no job diário
 - [ ] Testar disparo de notificações
 
 ### Planejamento Financeiro

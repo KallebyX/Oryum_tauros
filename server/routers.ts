@@ -1011,6 +1011,66 @@ export const appRouter = router({
         return { success: true };
       }),
   }),
+  
+  alerts: router({
+    create: protectedProcedure
+      .input(z.object({
+        farmId: z.number(),
+        type: z.enum(["gmd", "stock", "expense", "milk", "custom"]),
+        name: z.string(),
+        condition: z.enum(["below", "above", "equal"]),
+        threshold: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        const alertId = await db.createAlert({
+          farmId: input.farmId,
+          type: input.type,
+          name: input.name,
+          condition: input.condition,
+          threshold: input.threshold.toString(),
+          isActive: true,
+        });
+        return { success: true, alertId };
+      }),
+    
+    list: protectedProcedure
+      .input(z.object({ farmId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getAlertsByFarmId(input.farmId);
+      }),
+    
+    toggle: protectedProcedure
+      .input(z.object({ id: z.number(), isActive: z.boolean() }))
+      .mutation(async ({ input }) => {
+        await db.updateAlert(input.id, { isActive: input.isActive });
+        return { success: true };
+      }),
+    
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        threshold: z.number().optional(),
+        condition: z.enum(["below", "above", "equal"]).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        const updateData: any = {};
+        if (data.name) updateData.name = data.name;
+        if (data.threshold !== undefined) updateData.threshold = data.threshold.toString();
+        if (data.condition) updateData.condition = data.condition;
+        
+        await db.updateAlert(id, updateData);
+        return { success: true };
+      }),
+    
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteAlert(input.id);
+        return { success: true };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
