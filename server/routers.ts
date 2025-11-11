@@ -987,7 +987,7 @@ export const appRouter = router({
           title: input.title,
           targetValue: input.targetValue.toString(),
           unit: input.unit,
-          deadline: input.deadline,
+          deadline: input.deadline as any, // date type from drizzle accepts string in YYYY-MM-DD format
         });
         return { success: true, goalId };
       }),
