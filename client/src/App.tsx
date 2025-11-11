@@ -22,6 +22,7 @@ import Pastures from "./pages/Pastures";
 import Reports from "./pages/Reports";
 import Notifications from "./pages/Notifications";
 import Goals from "./pages/Goals";
+import Analytics from "./pages/Analytics";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -45,6 +46,7 @@ function Router() {
       <Route path={"/reports"} component={Reports} />
       <Route path={"/notifications"} component={Notifications} />
       <Route path={"/goals"} component={Goals} />
+      <Route path={"/analytics"} component={Analytics} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

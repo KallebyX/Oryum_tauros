@@ -359,3 +359,40 @@
 - [ ] Criar endpoint /api/reports/excel/animals
 - [ ] Criar endpoint /api/reports/excel/production
 - [ ] Adicionar botões de exportação no frontend
+
+
+## 🚀 Funcionalidades Avançadas - Analytics, Alertas, Budget e Admin
+
+### Dashboard Analytics Avançado
+- [x] Criar página /analytics
+- [x] Adicionar gráfico de evolução de GMD (linha temporal)
+- [x] Adicionar gráfico de produção de leite (barras mensais)
+- [x] Adicionar gráfico de receitas/despesas (linha comparativa)
+- [x] Adicionar gráfico de evolução de score ESG (área)
+- [x] Implementar filtros de período (mensal/anual)
+- [ ] Adicionar comparação período anterior
+
+### Sistema de Alertas Customizáveis
+- [ ] Criar tabela de alertas no banco de dados
+- [ ] Implementar CRUD de alertas
+- [ ] Criar página /alerts para configuração
+- [ ] Adicionar tipos de alerta (GMD, estoque, despesas)
+- [ ] Implementar verificação automática de thresholds
+- [ ] Integrar com sistema de notificações
+
+### Planejamento Financeiro
+- [ ] Criar página /budget
+- [ ] Implementar cadastro de orçamento anual
+- [ ] Adicionar projeções de receita/despesa
+- [ ] Criar análise de break-even
+- [ ] Implementar simulador de cenários
+- [ ] Adicionar gráficos de projeção
+
+### Painel Admin (Exclusivo Kalleby)
+- [ ] Criar página /admin com restrição de acesso
+- [ ] Implementar dashboard de clientes
+- [ ] Adicionar gestão de assinaturas
+- [ ] Criar painel de cobranças
+- [ ] Implementar insights e métricas globais
+- [ ] Adicionar monitoramento de problemas
+- [ ] Criar logs de atividades

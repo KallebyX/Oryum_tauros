@@ -412,3 +412,21 @@ export const goals = mysqlTable("goals", {
 
 export type Goal = typeof goals.$inferSelect;
 export type InsertGoal = typeof goals.$inferInsert;
+
+/**
+ * Alertas Customizáveis
+ */
+export const alerts = mysqlTable("alerts", {
+  id: int("id").autoincrement().primaryKey(),
+  farmId: int("farmId").notNull(),
+  type: mysqlEnum("type", ["gmd", "stock", "expense", "milk", "custom"]).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  condition: mysqlEnum("condition", ["below", "above", "equal"]).notNull(),
+  threshold: decimal("threshold", { precision: 10, scale: 2 }).notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Alert = typeof alerts.$inferSelect;
+export type InsertAlert = typeof alerts.$inferInsert;
