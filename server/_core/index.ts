@@ -35,7 +35,7 @@ async function startServer() {
   const server = createServer(app);
   
   // Stripe webhook precisa do raw body, então registrar antes do body parser
-  app.post("/api/webhooks/stripe", express.raw({ type: "application/json" }), handleStripeWebhook);
+  app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), handleStripeWebhook);
   
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));

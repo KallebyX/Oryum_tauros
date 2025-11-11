@@ -38,6 +38,8 @@ export async function createCheckoutSession(params: {
     client_reference_id: params.userId.toString(),
     metadata: {
       userId: params.userId.toString(),
+      farmId: params.userId.toString(), // Usando userId como farmId por enquanto
+      plan: params.priceId.includes("basic") ? "basic" : params.priceId.includes("professional") ? "professional" : "enterprise",
     },
   });
 

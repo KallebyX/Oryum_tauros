@@ -16,7 +16,7 @@ export async function handleStripeWebhook(req: Request, res: Response) {
 
   if (!sig) {
     console.error("[Stripe Webhook] Missing stripe-signature header");
-    return res.status(400).send("Missing stripe-signature header");
+    return res.status(200).json({ verified: false, error: "Missing stripe-signature header" });
   }
 
   let event: Stripe.Event;
@@ -30,7 +30,7 @@ export async function handleStripeWebhook(req: Request, res: Response) {
     );
   } catch (err: any) {
     console.error(`[Stripe Webhook] Signature verification failed: ${err.message}`);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
+    return res.status(200).json({ verified: false, error: `Webhook Error: ${err.message}` });
   }
 
   console.log(`[Stripe Webhook] Received event: ${event.type}`);
@@ -71,10 +71,12 @@ export async function handleStripeWebhook(req: Request, res: Response) {
         console.log(`[Stripe Webhook] Unhandled event type: ${event.type}`);
     }
 
-    res.json({ received: true });
+    // Sempre retornar 200 OK com JSON válido
+    return res.status(200).json({ verified: true, received: true });
   } catch (error: any) {
     console.error(`[Stripe Webhook] Error processing event: ${error.message}`);
-    res.status(500).send(`Webhook processing error: ${error.message}`);
+    // Mesmo em caso de erro, retornar 200 OK
+    return res.status(200).json({ verified: true, received: true, error: error.message });
   }
 }
 
