@@ -476,6 +476,386 @@ export const appRouter = router({
         return { url: session.url };
       }),
   }),
+  
+  reproduction: router({
+    create: protectedProcedure
+      .input(z.object({
+        farmId: z.number(),
+        animalId: z.number(),
+        eventType: z.enum(["heat", "insemination", "pregnancy_check", "birth", "abortion"]),
+        date: z.string(),
+        notes: z.string().optional(),
+        bullId: z.number().optional(),
+        semenCode: z.string().optional(),
+        result: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const eventId = await db.createReproductiveEvent({
+          ...input,
+          date: new Date(input.date),
+        });
+        return { eventId };
+      }),
+    
+    listByAnimal: protectedProcedure
+      .input(z.object({ animalId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getReproductiveEventsByAnimalId(input.animalId);
+      }),
+    
+    listByFarm: protectedProcedure
+      .input(z.object({ farmId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getReproductiveEventsByFarmId(input.farmId);
+      }),
+    
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        eventType: z.enum(["heat", "insemination", "pregnancy_check", "birth", "abortion"]).optional(),
+        date: z.string().optional(),
+        notes: z.string().optional(),
+        result: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, date, ...rest } = input;
+        await db.updateReproductiveEvent(id, {
+          ...rest,
+          ...(date && { date: new Date(date) }),
+        });
+        return { success: true };
+      }),
+    
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteReproductiveEvent(input.id);
+        return { success: true };
+      }),
+  }),
+  
+  health: router({
+    create: protectedProcedure
+      .input(z.object({
+        farmId: z.number(),
+        animalId: z.number().optional(),
+        batchId: z.number().optional(),
+        vaccineType: z.string(),
+        date: z.string(),
+        dosage: z.string().optional(),
+        veterinarian: z.string().optional(),
+        nextDueDate: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const vaccinationId = await db.createVaccination({
+          ...input,
+          date: new Date(input.date),
+          nextDueDate: input.nextDueDate ? new Date(input.nextDueDate) : undefined,
+        });
+        return { vaccinationId };
+      }),
+    
+    listByAnimal: protectedProcedure
+      .input(z.object({ animalId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getVaccinationsByAnimalId(input.animalId);
+      }),
+    
+    listByFarm: protectedProcedure
+      .input(z.object({ farmId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getVaccinationsByFarmId(input.farmId);
+      }),
+    
+    upcoming: protectedProcedure
+      .input(z.object({ farmId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getUpcomingVaccinations(input.farmId);
+      }),
+    
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        vaccineType: z.string().optional(),
+        date: z.string().optional(),
+        dosage: z.string().optional(),
+        nextDueDate: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, date, nextDueDate, ...rest } = input;
+        await db.updateVaccination(id, {
+          ...rest,
+          ...(date && { date: new Date(date) }),
+          ...(nextDueDate && { nextDueDate: new Date(nextDueDate) }),
+        });
+        return { success: true };
+      }),
+    
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteVaccination(input.id);
+        return { success: true };
+      }),
+  }),
+  
+  pastures: router({
+    create: protectedProcedure
+      .input(z.object({
+        farmId: z.number(),
+        name: z.string(),
+        areaHectares: z.number(),
+        grassType: z.string().optional(),
+        status: z.enum(["active", "resting", "renovation"]).optional(),
+        currentBatchId: z.number().optional(),
+        rotationStartDate: z.string().optional(),
+        restPeriodDays: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const pastureId = await db.createPasture({
+          ...input,
+          rotationStartDate: input.rotationStartDate ? new Date(input.rotationStartDate) : undefined,
+        });
+        return { pastureId };
+      }),
+    
+    list: protectedProcedure
+      .input(z.object({ farmId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getPasturesByFarmId(input.farmId);
+      }),
+    
+    available: protectedProcedure
+      .input(z.object({ farmId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getAvailablePastures(input.farmId);
+      }),
+    
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        areaHectares: z.number().optional(),
+        status: z.enum(["active", "resting", "renovation"]).optional(),
+        currentBatchId: z.number().optional(),
+        rotationStartDate: z.string().optional(),
+        restPeriodDays: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, rotationStartDate, ...rest } = input;
+        await db.updatePasture(id, {
+          ...rest,
+          ...(rotationStartDate && { rotationStartDate: new Date(rotationStartDate) }),
+        });
+        return { success: true };
+      }),
+    
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deletePasture(input.id);
+        return { success: true };
+      }),
+  }),
+  
+  supplementation: router({
+    create: protectedProcedure
+      .input(z.object({
+        farmId: z.number(),
+        batchId: z.number(),
+        supplementType: z.string(),
+        quantityKg: z.number(),
+        costPerKg: z.number().optional(),
+        date: z.string(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const supplementationId = await db.createSupplementation({
+          ...input,
+          date: new Date(input.date),
+        });
+        return { supplementationId };
+      }),
+    
+    list: protectedProcedure
+      .input(z.object({ farmId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getSupplementationByFarmId(input.farmId);
+      }),
+    
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        supplementType: z.string().optional(),
+        quantityKg: z.number().optional(),
+        costPerKg: z.number().optional(),
+        date: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, date, ...rest } = input;
+        await db.updateSupplementation(id, {
+          ...rest,
+          ...(date && { date: new Date(date) }),
+        });
+        return { success: true };
+      }),
+    
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteSupplementation(input.id);
+        return { success: true };
+      }),
+  }),
+  
+  milk: router({
+    create: protectedProcedure
+      .input(z.object({
+        farmId: z.number(),
+        animalId: z.number(),
+        date: z.string(),
+        liters: z.number(),
+        lactationDay: z.number().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const productionId = await db.createMilkProduction({
+          ...input,
+          date: new Date(input.date),
+        });
+        return { productionId };
+      }),
+    
+    list: protectedProcedure
+      .input(z.object({
+        farmId: z.number(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getMilkProductionByFarmId(
+          input.farmId,
+          input.startDate ? new Date(input.startDate) : undefined,
+          input.endDate ? new Date(input.endDate) : undefined
+        );
+      }),
+  }),
+  
+  ai: router({
+    recommendations: protectedProcedure
+      .input(z.object({ farmId: z.number() }))
+      .mutation(async ({ input }) => {
+        const farm = await db.getFarmById(input.farmId);
+        if (!farm) throw new Error("Fazenda não encontrada");
+        
+        const animals = await db.getAnimalsByFarmId(input.farmId);
+        const esgScore = await db.calculateESGScore(input.farmId);
+        const challenges = await db.getChallengeProgressByFarmId(input.farmId);
+        
+        const { generateFarmRecommendations } = await import("./_core/aiRecommendations");
+        
+        const recommendations = await generateFarmRecommendations({
+          farmId: input.farmId,
+          farmName: farm.name,
+          animalCount: animals.length,
+          esgScore: esgScore,
+          challenges: challenges.filter((c: any) => !c.completed).map((c: any) => c.challengeId.toString()),
+        });
+        
+        // Salvar recomendação no banco
+        const recommendationId = await db.createAIRecommendation({
+          farmId: input.farmId,
+          type: "production",
+          title: "Recomendações Gerais",
+          content: recommendations,
+        });
+        
+        return { recommendationId, content: recommendations };
+      }),
+    
+    esgSuggestions: protectedProcedure
+      .input(z.object({ farmId: z.number() }))
+      .mutation(async ({ input }) => {
+        const esgScore = await db.calculateESGScore(input.farmId);
+        const responses = await db.getESGResponsesByFarmId(input.farmId);
+        const checklists = await db.getActiveChecklists();
+        
+        const questionsWithResponses = checklists.map((checklist: any) => {
+          const response = responses.find((r: any) => r.checklistId === checklist.id);
+          return {
+            question: checklist.title,
+            response: response?.response || false,
+          };
+        });
+        
+        const { generateESGImprovementSuggestions } = await import("./_core/aiRecommendations");
+        
+        const suggestions = await generateESGImprovementSuggestions(
+          esgScore,
+          questionsWithResponses
+        );
+        
+        // Salvar sugestão no banco
+        const recommendationId = await db.createAIRecommendation({
+          farmId: input.farmId,
+          type: "esg",
+          title: "Sugestões para Melhorar ESG",
+          content: suggestions,
+        });
+        
+        return { recommendationId, content: suggestions };
+      }),
+    
+    performanceSummary: protectedProcedure
+      .input(z.object({ farmId: z.number() }))
+      .mutation(async ({ input }) => {
+        const animals = await db.getAnimalsByFarmId(input.farmId);
+        const financialSummary = await db.getFinancialSummary(input.farmId);
+        const esgScore = await db.calculateESGScore(input.farmId);
+        const challenges = await db.getChallengeProgressByFarmId(input.farmId);
+        
+        // Calcular GMD médio
+        let totalGMD = 0;
+        let countGMD = 0;
+        for (const animal of animals) {
+          if (animal.gmd && animal.gmd > 0) {
+            totalGMD += animal.gmd;
+            countGMD++;
+          }
+        }
+        const averageGMD = countGMD > 0 ? totalGMD / countGMD : undefined;
+        
+        const { generatePerformanceSummary } = await import("./_core/aiRecommendations");
+        
+        const summary = await generatePerformanceSummary({
+          totalAnimals: animals.length,
+          averageGMD,
+          totalRevenue: financialSummary.income,
+          totalExpenses: financialSummary.expense,
+          esgScore: esgScore,
+          completedChallenges: challenges.filter((c: any) => c.completed).length,
+        });
+        
+        // Salvar resumo no banco
+        const recommendationId = await db.createAIRecommendation({
+          farmId: input.farmId,
+          type: "financial",
+          title: "Resumo de Desempenho",
+          content: summary,
+        });
+        
+        return { recommendationId, content: summary };
+      }),
+    
+    history: protectedProcedure
+      .input(z.object({ farmId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getAIRecommendationsByFarmId(input.farmId);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

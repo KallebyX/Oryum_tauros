@@ -15,6 +15,10 @@ import Pricing from "./pages/Pricing";
 import ESG from "./pages/ESG";
 import Challenges from "./pages/Challenges";
 import Ranking from "./pages/Ranking";
+import MilkProduction from "./pages/MilkProduction";
+import Reproduction from "./pages/Reproduction";
+import Health from "./pages/Health";
+import Pastures from "./pages/Pastures";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -31,6 +35,10 @@ function Router() {
       <Route path={"/esg"} component={ESG} />
       <Route path={"/challenges"} component={Challenges} />
       <Route path={"/ranking"} component={Ranking} />
+      <Route path={"/milk-production"} component={MilkProduction} />
+      <Route path={"/reproduction"} component={Reproduction} />
+      <Route path={"/health"} component={Health} />
+      <Route path={"/pastures"} component={Pastures} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

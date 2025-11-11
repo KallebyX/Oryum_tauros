@@ -735,3 +735,164 @@ export async function cancelSubscription(id: number) {
     .set({ status: "canceled", cancelAtPeriodEnd: 1 })
     .where(eq(subscriptions.id, id));
 }
+
+
+// ========== REPRODUCTIVE MANAGEMENT HELPERS ==========
+
+export async function createReproductiveEvent(event: InsertReproductiveEvent) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(reproductiveEvents).values(event);
+  return result[0].insertId;
+}
+
+export async function getReproductiveEventsByAnimalId(animalId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(reproductiveEvents)
+    .where(eq(reproductiveEvents.animalId, animalId))
+    .orderBy(desc(reproductiveEvents.date));
+}
+
+export async function getReproductiveEventsByFarmId(farmId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(reproductiveEvents)
+    .where(eq(reproductiveEvents.farmId, farmId))
+    .orderBy(desc(reproductiveEvents.date));
+}
+
+export async function updateReproductiveEvent(id: number, data: Partial<InsertReproductiveEvent>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(reproductiveEvents).set(data).where(eq(reproductiveEvents.id, id));
+}
+
+export async function deleteReproductiveEvent(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(reproductiveEvents).where(eq(reproductiveEvents.id, id));
+}
+
+// ========== HEALTH/VACCINATION HELPERS ==========
+
+export async function createVaccination(vaccination: InsertVaccination) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(vaccinations).values(vaccination);
+  return result[0].insertId;
+}
+
+export async function getVaccinationsByAnimalId(animalId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(vaccinations)
+    .where(eq(vaccinations.animalId, animalId))
+    .orderBy(desc(vaccinations.date));
+}
+
+export async function getVaccinationsByFarmId(farmId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(vaccinations)
+    .where(eq(vaccinations.farmId, farmId))
+    .orderBy(desc(vaccinations.date));
+}
+
+export async function getUpcomingVaccinations(farmId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const today = new Date();
+  const thirtyDaysFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+  
+  const allVaccinations = await db.select().from(vaccinations)
+    .where(eq(vaccinations.farmId, farmId))
+    .orderBy(vaccinations.nextDueDate);
+  
+  return allVaccinations.filter(v => {
+    if (!v.nextDueDate) return false;
+    const dueDate = new Date(v.nextDueDate);
+    return dueDate >= today && dueDate <= thirtyDaysFromNow;
+  });
+}
+
+export async function updateVaccination(id: number, data: Partial<InsertVaccination>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(vaccinations).set(data).where(eq(vaccinations.id, id));
+}
+
+export async function deleteVaccination(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(vaccinations).where(eq(vaccinations.id, id));
+}
+
+// ========== PASTURE MANAGEMENT HELPERS ==========
+
+export async function createPasture(pasture: InsertPasture) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(pastures).values(pasture);
+  return result[0].insertId;
+}
+
+export async function getPasturesByFarmId(farmId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(pastures)
+    .where(eq(pastures.farmId, farmId))
+    .orderBy(pastures.name);
+}
+
+export async function updatePasture(id: number, data: Partial<InsertPasture>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(pastures).set(data).where(eq(pastures.id, id));
+}
+
+export async function deletePasture(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(pastures).where(eq(pastures.id, id));
+}
+
+export async function getAvailablePastures(farmId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(pastures)
+    .where(and(
+      eq(pastures.farmId, farmId),
+      eq(pastures.status, "active")
+    ))
+    .orderBy(pastures.name);
+}
+
+// ========== SUPPLEMENTATION HELPERS ==========
+
+export async function createSupplementation(supplementationData: InsertSupplementation) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(supplementation).values(supplementationData);
+  return result[0].insertId;
+}
+
+export async function getSupplementationByFarmId(farmId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(supplementation)
+    .where(eq(supplementation.farmId, farmId))
+    .orderBy(desc(supplementation.date));
+}
+
+export async function updateSupplementation(id: number, data: Partial<InsertSupplementation>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(supplementation).set(data).where(eq(supplementation.id, id));
+}
+
+export async function deleteSupplementation(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(supplementation).where(eq(supplementation.id, id));
+}
