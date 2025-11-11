@@ -21,11 +21,11 @@
 
 ## Fase 2: Backend - Endpoints tRPC
 - [x] Implementar routers tRPC completos
-- [ ] Implementar CRUD de fazendas
-- [ ] Implementar CRUD de transações financeiras
-- [ ] Implementar CRUD de estoque com alertas
-- [ ] Implementar CRUD de lotes
-- [ ] Implementar CRUD de animais individuais
+- [x] Implementar CRUD de fazendas
+- [x] Implementar CRUD de transações financeiras
+- [x] Implementar CRUD de estoque com alertas
+- [x] Implementar CRUD de lotes
+- [x] Implementar CRUD de animais individuais
 - [ ] Implementar registro de pesagens e cálculo de GMD
 - [ ] Implementar registro de produção de leite
 - [ ] Implementar endpoints de checklist ESG

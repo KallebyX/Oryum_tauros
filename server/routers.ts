@@ -2,7 +2,7 @@ import { z } from "zod";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { publicProcedure, protectedProcedure, adminProcedure, router } from "./_core/trpc";
 import * as db from "./db";
 
 export const appRouter = router({
@@ -1091,6 +1091,336 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         await db.deleteAlert(input.id);
         return { success: true };
+      }),
+  }),
+
+  budget: router({
+    create: protectedProcedure
+      .input(z.object({
+        farmId: z.number(),
+        year: z.number(),
+        month: z.number(),
+        category: z.enum(["revenue", "expense"]),
+        subcategory: z.string(),
+        plannedAmount: z.number(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const budgetId = await db.createBudget({
+          ...input,
+          plannedAmount: input.plannedAmount.toString(),
+          actualAmount: "0",
+        });
+        return { success: true, budgetId };
+      }),
+    
+    list: protectedProcedure
+      .input(z.object({
+        farmId: z.number(),
+        year: z.number().optional(),
+        month: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getBudgetsByFarmId(input.farmId, input.year, input.month);
+      }),
+    
+    summary: protectedProcedure
+      .input(z.object({
+        farmId: z.number(),
+        year: z.number(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getBudgetSummary(input.farmId, input.year);
+      }),
+    
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        plannedAmount: z.number().optional(),
+        actualAmount: z.number().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        const updateData: any = {};
+        if (data.plannedAmount !== undefined) updateData.plannedAmount = data.plannedAmount.toString();
+        if (data.actualAmount !== undefined) updateData.actualAmount = data.actualAmount.toString();
+        if (data.notes !== undefined) updateData.notes = data.notes;
+        
+        await db.updateBudget(id, updateData);
+        return { success: true };
+      }),
+    
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteBudget(input.id);
+        return { success: true };
+      }),
+  }),
+
+  projections: router({
+    create: protectedProcedure
+      .input(z.object({
+        farmId: z.number(),
+        name: z.string(),
+        description: z.string().optional(),
+        startDate: z.string(),
+        endDate: z.string(),
+        scenario: z.enum(["optimistic", "realistic", "pessimistic"]),
+        revenueGrowthRate: z.number(),
+        averagePrice: z.number(),
+        expectedVolume: z.number(),
+        fixedCosts: z.number(),
+        variableCostPerUnit: z.number(),
+        operatingExpenseRate: z.number(),
+        projectedRevenue: z.number(),
+        projectedCosts: z.number(),
+        projectedProfit: z.number(),
+        profitMargin: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        const projectionId = await db.createFinancialProjection({
+          ...input,
+          startDate: new Date(input.startDate),
+          endDate: new Date(input.endDate),
+          revenueGrowthRate: input.revenueGrowthRate.toString(),
+          averagePrice: input.averagePrice.toString(),
+          variableCostPerUnit: input.variableCostPerUnit.toString(),
+          operatingExpenseRate: input.operatingExpenseRate.toString(),
+          fixedCosts: input.fixedCosts.toString(),
+          projectedRevenue: input.projectedRevenue.toString(),
+          projectedCosts: input.projectedCosts.toString(),
+          projectedProfit: input.projectedProfit.toString(),
+          profitMargin: input.profitMargin.toString(),
+        });
+        return { success: true, projectionId };
+      }),
+    
+    list: protectedProcedure
+      .input(z.object({ farmId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getProjectionsByFarmId(input.farmId);
+      }),
+    
+    get: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getProjectionById(input.id);
+      }),
+    
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteFinancialProjection(input.id);
+        return { success: true };
+      }),
+    
+    calculate: protectedProcedure
+      .input(z.object({
+        scenario: z.enum(["optimistic", "realistic", "pessimistic"]),
+        baseRevenue: z.number(),
+        baseVolume: z.number(),
+        fixedCosts: z.number(),
+        variableCostPerUnit: z.number(),
+        months: z.number(),
+      }))
+      .query(async ({ input }) => {
+        return await db.calculateProjection(input);
+      }),
+    
+    compare: protectedProcedure
+      .input(z.object({
+        baseRevenue: z.number(),
+        baseVolume: z.number(),
+        fixedCosts: z.number(),
+        variableCostPerUnit: z.number(),
+        months: z.number(),
+      }))
+      .query(async ({ input }) => {
+        return await db.compareScenarios(input);
+      }),
+  }),
+
+  breakeven: router({
+    calculate: protectedProcedure
+      .input(z.object({
+        farmId: z.number(),
+        fixedCosts: z.number(),
+        variableCostPerUnit: z.number(),
+        unitPrice: z.number(),
+        currentUnits: z.number(),
+      }))
+      .query(async ({ input }) => {
+        return await db.calculateBreakEven(input);
+      }),
+    
+    analyze: protectedProcedure
+      .input(z.object({
+        farmId: z.number(),
+        fixedCosts: z.number(),
+        variableCostPerUnit: z.number(),
+        unitPrice: z.number(),
+        currentUnits: z.number(),
+      }))
+      .query(async ({ input }) => {
+        return await db.analyzeBreakEvenScenarios(input);
+      }),
+  }),
+
+  comparison: router({
+    monthOverMonth: protectedProcedure
+      .input(z.object({
+        farmId: z.number(),
+        year: z.number(),
+        month: z.number(),
+      }))
+      .query(async ({ input }) => {
+        return await db.compareMonthOverMonth(input.farmId, input.year, input.month);
+      }),
+    
+    yearOverYear: protectedProcedure
+      .input(z.object({
+        farmId: z.number(),
+        year: z.number(),
+      }))
+      .query(async ({ input }) => {
+        return await db.compareYearOverYear(input.farmId, input.year);
+      }),
+    
+    trend: protectedProcedure
+      .input(z.object({
+        farmId: z.number(),
+        months: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getMonthlyTrend(input.farmId, input.months);
+      }),
+  }),
+
+  exports: router({
+    financial: protectedProcedure
+      .input(z.object({
+        farmId: z.number(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        const transactions = await db.getTransactionsByFarmId(input.farmId);
+        
+        // Filtrar por data se fornecido
+        let filtered = transactions;
+        if (input.startDate || input.endDate) {
+          filtered = transactions.filter(t => {
+            const date = new Date(t.date);
+            if (input.startDate && date < new Date(input.startDate)) return false;
+            if (input.endDate && date > new Date(input.endDate)) return false;
+            return true;
+          });
+        }
+        
+        // Retornar dados formatados para Excel
+        return filtered.map(t => ({
+          Data: new Date(t.date).toLocaleDateString('pt-BR'),
+          Tipo: t.type === 'income' ? 'Receita' : 'Despesa',
+          Categoria: t.category,
+          Descrição: t.description || '-',
+          Valor: t.amount,
+          Lote: t.batchId || '-',
+        }));
+      }),
+    
+    animals: protectedProcedure
+      .input(z.object({ farmId: z.number() }))
+      .query(async ({ input }) => {
+        const animals = await db.getAnimalsByFarmId(input.farmId);
+        
+        return animals.map(a => ({
+          ID: a.id,
+          Nome: a.name || '-',
+          'Brinco/Tag': a.tagId,
+          Espécie: a.species,
+          Raça: a.breed || '-',
+          Sexo: a.sex === 'male' ? 'Macho' : 'Fêmea',
+          'Data Nascimento': a.birthDate ? new Date(a.birthDate).toLocaleDateString('pt-BR') : '-',
+          'Peso Atual': a.currentWeight || '-',
+          Status: a.status,
+          Lote: a.batchId || '-',
+        }));
+      }),
+    
+    inventory: protectedProcedure
+      .input(z.object({ farmId: z.number() }))
+      .query(async ({ input }) => {
+        const items = await db.getInventoryByFarmId(input.farmId);
+        
+        return items.map(i => ({
+          Item: i.name,
+          Tipo: i.type,
+          Quantidade: i.quantity,
+          Unidade: i.unit,
+          'Custo Unitário': i.unitCost || '-',
+          'Valor Total': i.unitCost ? i.quantity * i.unitCost : '-',
+          'Estoque Mínimo': i.minStock || '-',
+          'Data Validade': i.expiryDate ? new Date(i.expiryDate).toLocaleDateString('pt-BR') : '-',
+          'Última Atualização': new Date(i.updatedAt).toLocaleDateString('pt-BR'),
+        }));
+      }),
+    
+    budget: protectedProcedure
+      .input(z.object({
+        farmId: z.number(),
+        year: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        const budgets = await db.getBudgetsByFarmId(input.farmId);
+        
+        // Filtrar por ano se fornecido
+        const filtered = input.year 
+          ? budgets.filter(b => b.year === input.year)
+          : budgets;
+        
+        return filtered.map(b => {
+          const plannedAmount = parseFloat(b.plannedAmount);
+          const actualAmount = b.actualAmount ? parseFloat(b.actualAmount) : 0;
+          const diff = actualAmount - plannedAmount;
+          const variation = plannedAmount > 0 ? (diff / plannedAmount * 100).toFixed(2) + '%' : '-';
+          
+          return {
+            Ano: b.year,
+            Mês: b.month,
+            Tipo: b.category === 'revenue' ? 'Receita' : 'Despesa',
+            Subcategoria: b.subcategory,
+            'Valor Planejado': plannedAmount,
+            'Valor Real': actualAmount,
+            Diferença: diff,
+            'Variação %': variation,
+          };
+        });
+      }),
+  }),
+
+  admin: router({
+    metrics: adminProcedure.query(async () => {
+      return await db.getAdminMetrics();
+    }),
+    
+    users: adminProcedure.query(async () => {
+      return await db.getAllUsers();
+    }),
+    
+    farms: adminProcedure.query(async () => {
+      return await db.getAllFarms();
+    }),
+    
+    subscriptions: adminProcedure.query(async () => {
+      return await db.getAllSubscriptions();
+    }),
+    
+    activity: adminProcedure
+      .input(z.object({ limit: z.number().optional() }))
+      .query(async ({ input }) => {
+        return await db.getRecentActivity(input.limit);
       }),
   }),
 });

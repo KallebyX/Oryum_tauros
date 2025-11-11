@@ -1,0 +1,22 @@
+CREATE TABLE `financial_projections` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`farmId` int NOT NULL,
+	`name` varchar(255) NOT NULL,
+	`description` text,
+	`startDate` date NOT NULL,
+	`endDate` date NOT NULL,
+	`scenario` enum('optimistic','realistic','pessimistic') NOT NULL,
+	`revenueGrowthRate` decimal(5,2) NOT NULL,
+	`averagePrice` decimal(10,2) NOT NULL,
+	`expectedVolume` int NOT NULL,
+	`fixedCosts` decimal(10,2) NOT NULL,
+	`variableCostPerUnit` decimal(10,2) NOT NULL,
+	`operatingExpenseRate` decimal(5,2) NOT NULL,
+	`projectedRevenue` decimal(12,2) NOT NULL,
+	`projectedCosts` decimal(12,2) NOT NULL,
+	`projectedProfit` decimal(12,2) NOT NULL,
+	`profitMargin` decimal(5,2) NOT NULL,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `financial_projections_id` PRIMARY KEY(`id`)
+);

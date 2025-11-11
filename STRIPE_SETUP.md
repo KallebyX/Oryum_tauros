@@ -102,7 +102,22 @@ VITE_STRIPE_PRICE_ENTERPRISE=price_xxxxxxxxxxxxx
 VITE_STRIPE_PUBLISHABLE_KEY=pk_test_xxxxxxxxxxxxx
 ```
 
-**⚠️ Importante:** Após adicionar as variáveis, reinicie o servidor para aplicar as mudanças.
+### Segurança e uso local (.env)
+
+Para desenvolvimento local e para facilitar deploys, este repositório inclui um arquivo de exemplo `.env.example` na raiz com os nomes de variáveis esperados.
+
+- Copie `.env.example` para `.env` e preencha os valores reais (NÃO commite o `.env`).
+- O repositório já adiciona `.env` e variações ao `.gitignore` para evitar comitar segredos.
+- Em ambientes de produção/CI você deve configurar as variáveis de ambiente no painel do provedor (ex: Vercel, Netlify, Manus, Docker secrets, Kubernetes Secrets) em vez de colocar chaves no repositório.
+
+Exemplo (local):
+
+```bash
+cp .env.example .env
+# editar .env e inserir suas chaves
+```
+
+**⚠️ Importante:** Após adicionar as variáveis (no Manus, em produção ou no `.env` local), reinicie o servidor para aplicar as mudanças.
 
 ---
 

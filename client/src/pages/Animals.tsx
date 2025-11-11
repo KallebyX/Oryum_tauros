@@ -8,12 +8,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { trpc } from "@/lib/trpc";
 import { skipToken } from "@tanstack/react-query";
-import { Activity, Plus, Scale, TrendingUp } from "lucide-react";
+import { Activity, Plus, Scale, TrendingUp, FileDown } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useExcelExport } from "@/hooks/useExcelExport";
 
 export default function Animals() {
   const { user } = useAuth();
+  const { exportToExcel } = useExcelExport();
   const farmId = user?.id;
 
   const [showAnimalForm, setShowAnimalForm] = useState(false);
@@ -36,6 +38,11 @@ export default function Animals() {
 
   const { data: animals, refetch: refetchAnimals } = trpc.batches.listAnimals.useQuery(
     farmId ? { farmId } : skipToken
+  );
+
+  const { data: exportData, refetch: refetchExport } = trpc.exports.animals.useQuery(
+    farmId ? { farmId } : skipToken,
+    { enabled: false }
   );
 
   const { data: batches } = trpc.batches.list.useQuery(
@@ -130,6 +137,25 @@ export default function Animals() {
     return months > 0 ? `${months} meses` : `${diffDays} dias`;
   };
 
+  const handleExport = async () => {
+    try {
+      const result = await refetchExport();
+      if (result.data && result.data.length > 0) {
+        const success = exportToExcel(result.data, `animais-${new Date().toISOString().split('T')[0]}`, 'Animais');
+        if (success) {
+          toast.success('Relatório de animais exportado com sucesso!');
+        } else {
+          toast.error('Erro ao exportar relatório');
+        }
+      } else {
+        toast.warning('Nenhum animal disponível para exportar');
+      }
+    } catch (error) {
+      console.error('Erro ao exportar:', error);
+      toast.error('Erro ao exportar relatório');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 p-8">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -143,14 +169,19 @@ export default function Animals() {
             <p className="text-gray-600 mt-1">Rastreamento individual e controle de desempenho</p>
           </div>
 
-          <Dialog open={showAnimalForm} onOpenChange={setShowAnimalForm}>
-            <DialogTrigger asChild>
-              <Button className="bg-green-600 hover:bg-green-700">
-                <Plus className="w-4 h-4 mr-2" />
-                Cadastrar Animal
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleExport}>
+              <FileDown className="w-4 h-4 mr-2" />
+              Exportar Excel
+            </Button>
+            <Dialog open={showAnimalForm} onOpenChange={setShowAnimalForm}>
+              <DialogTrigger asChild>
+                <Button className="bg-green-600 hover:bg-green-700">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Cadastrar Animal
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Cadastrar Novo Animal</DialogTitle>
               </DialogHeader>
@@ -246,6 +277,7 @@ export default function Animals() {
               </div>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         {/* Stats Cards */}

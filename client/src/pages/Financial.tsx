@@ -7,10 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import { skipToken } from "@tanstack/react-query";
-import { ArrowDownCircle, ArrowUpCircle, DollarSign, Plus } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, DollarSign, Plus, FileDown } from "lucide-react";
+import { useExcelExport } from "@/hooks/useExcelExport";
+import { ComparisonCard } from "@/components/ComparisonCard";
+import { toast } from "sonner";
 
 export default function Financial() {
   const { user } = useAuth();
+  const { exportToExcel } = useExcelExport();
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     type: "income" as "income" | "expense",
@@ -20,7 +24,20 @@ export default function Financial() {
     date: new Date().toISOString().split('T')[0],
   });
 
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+
   const { data: transactions, refetch } = trpc.financial.list.useQuery(user?.farmId ? { farmId: user.farmId } : skipToken);
+  const { data: exportData, refetch: refetchExport } = trpc.exports.financial.useQuery(
+    user?.farmId ? { farmId: user.farmId } : skipToken,
+    { enabled: false }
+  );
+  
+  const { data: monthComparison } = trpc.comparison.monthOverMonth.useQuery(
+    user?.farmId ? { farmId: user.farmId, year: currentYear, month: currentMonth } : skipToken
+  );
+  
   const createTransaction = trpc.financial.create.useMutation({
     onSuccess: () => {
       refetch();
@@ -46,15 +63,40 @@ export default function Financial() {
   const totalExpense = transactions?.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0) || 0;
   const balance = totalIncome - totalExpense;
 
+  const handleExport = async () => {
+    try {
+      const result = await refetchExport();
+      if (result.data && result.data.length > 0) {
+        const success = exportToExcel(result.data, `transacoes-financeiras-${new Date().toISOString().split('T')[0]}`, 'Transações');
+        if (success) {
+          toast.success('Relatório exportado com sucesso!');
+        } else {
+          toast.error('Erro ao exportar relatório');
+        }
+      } else {
+        toast.warning('Nenhum dado disponível para exportar');
+      }
+    } catch (error) {
+      console.error('Erro ao exportar:', error);
+      toast.error('Erro ao exportar relatório');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
+                <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Gestão Financeira</h1>
-          <Button onClick={() => setShowForm(!showForm)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Nova Transação
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleExport}>
+              <FileDown className="mr-2 h-4 w-4" />
+              Exportar Excel
+            </Button>
+            <Button onClick={() => setShowForm(!showForm)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Nova Transação
+            </Button>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 mb-8">
@@ -90,6 +132,37 @@ export default function Financial() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Comparação Mês-a-Mês */}
+        {monthComparison && (
+          <div className="grid md:grid-cols-3 gap-6 mb-8">
+            <ComparisonCard
+              title="Receitas"
+              currentValue={monthComparison.current.revenue}
+              previousValue={monthComparison.previous.revenue}
+              currentPeriod={monthComparison.current.period}
+              previousPeriod={monthComparison.previous.period}
+              formatValue={(v) => `R$ ${v.toLocaleString('pt-BR')}`}
+            />
+            <ComparisonCard
+              title="Despesas"
+              currentValue={monthComparison.current.expenses}
+              previousValue={monthComparison.previous.expenses}
+              currentPeriod={monthComparison.current.period}
+              previousPeriod={monthComparison.previous.period}
+              formatValue={(v) => `R$ ${v.toLocaleString('pt-BR')}`}
+              inverse
+            />
+            <ComparisonCard
+              title="Lucro"
+              currentValue={monthComparison.current.profit}
+              previousValue={monthComparison.previous.profit}
+              currentPeriod={monthComparison.current.period}
+              previousPeriod={monthComparison.previous.period}
+              formatValue={(v) => `R$ ${v.toLocaleString('pt-BR')}`}
+            />
+          </div>
+        )}
 
         {showForm && (
           <Card className="mb-8">

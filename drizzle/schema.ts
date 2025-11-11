@@ -430,3 +430,58 @@ export const alerts = mysqlTable("alerts", {
 
 export type Alert = typeof alerts.$inferSelect;
 export type InsertAlert = typeof alerts.$inferInsert;
+
+/**
+ * Orçamentos e Planejamento Financeiro
+ */
+export const budgets = mysqlTable("budgets", {
+  id: int("id").autoincrement().primaryKey(),
+  farmId: int("farmId").notNull(),
+  year: int("year").notNull(),
+  month: int("month").notNull(),
+  category: mysqlEnum("category", ["revenue", "expense"]).notNull(),
+  subcategory: varchar("subcategory", { length: 100 }).notNull(),
+  plannedAmount: decimal("plannedAmount", { precision: 10, scale: 2 }).notNull(),
+  actualAmount: decimal("actualAmount", { precision: 10, scale: 2 }).default("0"),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Budget = typeof budgets.$inferSelect;
+export type InsertBudget = typeof budgets.$inferInsert;
+
+/**
+ * Projeções Financeiras com Cenários
+ */
+export const financialProjections = mysqlTable("financial_projections", {
+  id: int("id").autoincrement().primaryKey(),
+  farmId: int("farmId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  startDate: date("startDate").notNull(),
+  endDate: date("endDate").notNull(),
+  scenario: mysqlEnum("scenario", ["optimistic", "realistic", "pessimistic"]).notNull(),
+  
+  // Premissas de Receita
+  revenueGrowthRate: decimal("revenueGrowthRate", { precision: 5, scale: 2 }).notNull(), // % crescimento
+  averagePrice: decimal("averagePrice", { precision: 10, scale: 2 }).notNull(), // preço médio por unidade
+  expectedVolume: int("expectedVolume").notNull(), // volume esperado de produção/vendas
+  
+  // Premissas de Custo
+  fixedCosts: decimal("fixedCosts", { precision: 10, scale: 2 }).notNull(),
+  variableCostPerUnit: decimal("variableCostPerUnit", { precision: 10, scale: 2 }).notNull(),
+  operatingExpenseRate: decimal("operatingExpenseRate", { precision: 5, scale: 2 }).notNull(), // % sobre receita
+  
+  // Resultados Calculados
+  projectedRevenue: decimal("projectedRevenue", { precision: 12, scale: 2 }).notNull(),
+  projectedCosts: decimal("projectedCosts", { precision: 12, scale: 2 }).notNull(),
+  projectedProfit: decimal("projectedProfit", { precision: 12, scale: 2 }).notNull(),
+  profitMargin: decimal("profitMargin", { precision: 5, scale: 2 }).notNull(), // % margem
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type FinancialProjection = typeof financialProjections.$inferSelect;
+export type InsertFinancialProjection = typeof financialProjections.$inferInsert;

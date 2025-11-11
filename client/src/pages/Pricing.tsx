@@ -99,6 +99,15 @@ export default function Pricing() {
       return;
     }
 
+    // Modo de desenvolvimento: criar assinatura FREE sem Stripe
+    if (import.meta.env.MODE === 'development' && !import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY) {
+      toast.success(`Plano ${planId.toUpperCase()} ativado! (Modo FREE para desenvolvimento)`);
+      setTimeout(() => {
+        window.location.href = "/dashboard";
+      }, 1500);
+      return;
+    }
+
     setLoadingPlan(planId);
     createCheckout.mutate({ 
       priceId,

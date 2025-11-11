@@ -13,7 +13,9 @@ import {
   notifications, InsertNotification,
   subscriptions, InsertSubscription,
   goals, InsertGoal,
-  alerts, InsertAlert
+  alerts, InsertAlert,
+  budgets, InsertBudget,
+  financialProjections, InsertFinancialProjection
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1039,4 +1041,709 @@ export async function getActiveAlerts() {
   if (!db) return [];
   
   return await db.select().from(alerts).where(eq(alerts.isActive, true));
+}
+
+
+// ========== BUDGET HELPERS ==========
+
+export async function createBudget(budget: InsertBudget) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const [result] = await db.insert(budgets).values(budget);
+  return result.insertId;
+}
+
+export async function getBudgetsByFarmId(farmId: number, year?: number, month?: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  let query = db.select().from(budgets).where(eq(budgets.farmId, farmId));
+  
+  const results = await query.orderBy(desc(budgets.year), desc(budgets.month));
+  
+  // Filtrar por ano e mês se fornecidos
+  if (year !== undefined && month !== undefined) {
+    return results.filter(b => b.year === year && b.month === month);
+  } else if (year !== undefined) {
+    return results.filter(b => b.year === year);
+  }
+  
+  return results;
+}
+
+export async function updateBudget(id: number, data: Partial<InsertBudget>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(budgets).set(data).where(eq(budgets.id, id));
+}
+
+export async function deleteBudget(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(budgets).where(eq(budgets.id, id));
+}
+
+export async function getBudgetSummary(farmId: number, year: number) {
+  const db = await getDb();
+  if (!db) return {
+    totalPlannedRevenue: 0,
+    totalActualRevenue: 0,
+    totalPlannedExpense: 0,
+    totalActualExpense: 0,
+    plannedBalance: 0,
+    actualBalance: 0,
+    variance: 0,
+  };
+  
+  const budgetList = await getBudgetsByFarmId(farmId, year);
+  
+  const plannedRevenue = budgetList
+    .filter(b => b.category === 'revenue')
+    .reduce((sum, b) => sum + parseFloat(b.plannedAmount), 0);
+  
+  const actualRevenue = budgetList
+    .filter(b => b.category === 'revenue')
+    .reduce((sum, b) => sum + parseFloat(b.actualAmount), 0);
+  
+  const plannedExpense = budgetList
+    .filter(b => b.category === 'expense')
+    .reduce((sum, b) => sum + parseFloat(b.plannedAmount), 0);
+  
+  const actualExpense = budgetList
+    .filter(b => b.category === 'expense')
+    .reduce((sum, b) => sum + parseFloat(b.actualAmount), 0);
+  
+  const plannedBalance = plannedRevenue - plannedExpense;
+  const actualBalance = actualRevenue - actualExpense;
+  const variance = actualBalance - plannedBalance;
+  
+  return {
+    totalPlannedRevenue: plannedRevenue,
+    totalActualRevenue: actualRevenue,
+    totalPlannedExpense: plannedExpense,
+    totalActualExpense: actualExpense,
+    plannedBalance,
+    actualBalance,
+    variance,
+  };
+}
+
+
+// ========== ADMIN HELPERS ==========
+
+export async function getAllUsers() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(users).orderBy(desc(users.createdAt));
+}
+
+export async function getAllFarms() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(farms).orderBy(desc(farms.createdAt));
+}
+
+export async function getAllSubscriptions() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(subscriptions).orderBy(desc(subscriptions.createdAt));
+}
+
+export async function getAdminMetrics() {
+  const db = await getDb();
+  if (!db) return {
+    totalUsers: 0,
+    totalFarms: 0,
+    activeSubscriptions: 0,
+    totalRevenue: 0,
+    userGrowth: 0,
+  };
+  
+  const allUsers = await db.select().from(users);
+  const allFarms = await db.select().from(farms);
+  const allSubscriptions = await db.select().from(subscriptions);
+  
+  const activeSubscriptions = allSubscriptions.filter(s => s.status === 'active').length;
+  
+  // Calcular crescimento de usuários (últimos 30 dias)
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  
+  const recentUsers = allUsers.filter(u => new Date(u.createdAt) >= thirtyDaysAgo).length;
+  const previousUsers = allUsers.length - recentUsers;
+  const userGrowth = previousUsers > 0 ? (recentUsers / previousUsers) * 100 : 0;
+  
+  return {
+    totalUsers: allUsers.length,
+    totalFarms: allFarms.length,
+    activeSubscriptions,
+    totalRevenue: 0, // Será calculado via Stripe API
+    userGrowth,
+  };
+}
+
+export async function getRecentActivity(limit: number = 20) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Buscar atividades recentes (últimos usuários, fazendas, transações)
+  const recentUsers = await db.select().from(users).orderBy(desc(users.createdAt)).limit(limit);
+  const recentFarms = await db.select().from(farms).orderBy(desc(farms.createdAt)).limit(limit);
+  
+  const activities: Array<{
+    type: string;
+    description: string;
+    timestamp: Date;
+    userId?: number;
+  }> = [];
+  
+  recentUsers.forEach(user => {
+    activities.push({
+      type: 'user_created',
+      description: `Novo usuário: ${user.name || user.email || 'Sem nome'}`,
+      timestamp: user.createdAt,
+      userId: user.id,
+    });
+  });
+  
+  recentFarms.forEach(farm => {
+    activities.push({
+      type: 'farm_created',
+      description: `Nova fazenda: ${farm.name}`,
+      timestamp: farm.createdAt,
+      userId: farm.userId,
+    });
+  });
+  
+  // Ordenar por timestamp e limitar
+  return activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, limit);
+}
+
+// ==================== Projeções Financeiras ====================
+
+export async function createFinancialProjection(projection: InsertFinancialProjection) {
+  const database = await getDb();
+  if (!database) throw new Error("Database not available");
+  
+  const [result] = await database.insert(financialProjections).values(projection);
+  return result.insertId;
+}
+
+export async function getProjectionsByFarmId(farmId: number) {
+  const database = await getDb();
+  if (!database) return [];
+  
+  return await database.select()
+    .from(financialProjections)
+    .where(eq(financialProjections.farmId, farmId))
+    .orderBy(desc(financialProjections.createdAt));
+}
+
+export async function getProjectionById(id: number) {
+  const database = await getDb();
+  if (!database) return null;
+  
+  const [projection] = await database.select()
+    .from(financialProjections)
+    .where(eq(financialProjections.id, id));
+  return projection;
+}
+
+export async function updateFinancialProjection(id: number, data: Partial<InsertFinancialProjection>) {
+  const database = await getDb();
+  if (!database) throw new Error("Database not available");
+  
+  await database.update(financialProjections)
+    .set({ ...data, updatedAt: new Date() })
+    .where(eq(financialProjections.id, id));
+}
+
+export async function deleteFinancialProjection(id: number) {
+  const database = await getDb();
+  if (!database) throw new Error("Database not available");
+  
+  await database.delete(financialProjections)
+    .where(eq(financialProjections.id, id));
+}
+
+export async function calculateProjection(params: {
+  scenario: 'optimistic' | 'realistic' | 'pessimistic';
+  baseRevenue: number;
+  baseVolume: number;
+  fixedCosts: number;
+  variableCostPerUnit: number;
+  months: number;
+}) {
+  const { scenario, baseRevenue, baseVolume, fixedCosts, variableCostPerUnit, months } = params;
+  
+  // Taxa de crescimento mensal por cenário
+  const growthRates = {
+    optimistic: 0.05,    // 5% ao mês
+    realistic: 0.02,     // 2% ao mês
+    pessimistic: -0.01,  // -1% ao mês
+  };
+  
+  // Taxa de despesas operacionais por cenário
+  const operatingExpenseRates = {
+    optimistic: 0.15,    // 15% da receita
+    realistic: 0.20,     // 20% da receita
+    pessimistic: 0.25,   // 25% da receita
+  };
+  
+  const monthlyRate = growthRates[scenario];
+  const opExpRate = operatingExpenseRates[scenario];
+  
+  const projections = [];
+  let currentRevenue = baseRevenue;
+  let currentVolume = baseVolume;
+  
+  for (let month = 1; month <= months; month++) {
+    // Aplicar crescimento
+    currentRevenue = currentRevenue * (1 + monthlyRate);
+    currentVolume = Math.round(currentVolume * (1 + monthlyRate));
+    
+    // Calcular custos
+    const variableCosts = currentVolume * variableCostPerUnit;
+    const operatingExpenses = currentRevenue * opExpRate;
+    const totalCosts = fixedCosts + variableCosts + operatingExpenses;
+    
+    // Calcular lucro e margem
+    const profit = currentRevenue - totalCosts;
+    const margin = currentRevenue > 0 ? (profit / currentRevenue) * 100 : 0;
+    
+    projections.push({
+      month,
+      revenue: Math.round(currentRevenue * 100) / 100,
+      volume: currentVolume,
+      fixedCosts,
+      variableCosts: Math.round(variableCosts * 100) / 100,
+      operatingExpenses: Math.round(operatingExpenses * 100) / 100,
+      totalCosts: Math.round(totalCosts * 100) / 100,
+      profit: Math.round(profit * 100) / 100,
+      margin: Math.round(margin * 100) / 100,
+    });
+  }
+  
+  return projections;
+}
+
+export async function compareScenarios(params: {
+  baseRevenue: number;
+  baseVolume: number;
+  fixedCosts: number;
+  variableCostPerUnit: number;
+  months: number;
+}) {
+  const scenarios: ('optimistic' | 'realistic' | 'pessimistic')[] = ['optimistic', 'realistic', 'pessimistic'];
+  
+  const comparisons = await Promise.all(
+    scenarios.map(async (scenario) => {
+      const projections = await calculateProjection({ ...params, scenario });
+      const lastMonth = projections[projections.length - 1];
+      
+      return {
+        scenario,
+        projections,
+        summary: {
+          totalRevenue: projections.reduce((sum, p) => sum + p.revenue, 0),
+          totalCosts: projections.reduce((sum, p) => sum + p.totalCosts, 0),
+          totalProfit: projections.reduce((sum, p) => sum + p.profit, 0),
+          finalRevenue: lastMonth.revenue,
+          finalProfit: lastMonth.profit,
+          finalMargin: lastMonth.margin,
+        },
+      };
+    })
+  );
+  
+  return comparisons;
+}
+
+// ==================== Análise de Ponto de Equilíbrio ====================
+
+export interface BreakEvenAnalysis {
+  breakEvenUnits: number;
+  breakEvenRevenue: number;
+  currentUnits: number;
+  currentRevenue: number;
+  currentProfit: number;
+  marginOfSafety: number;
+  marginOfSafetyPercentage: number;
+  contributionMargin: number;
+  contributionMarginRatio: number;
+  fixedCosts: number;
+  variableCosts: number;
+  unitPrice: number;
+  variableCostPerUnit: number;
+}
+
+export async function calculateBreakEven(params: {
+  farmId: number;
+  fixedCosts: number;
+  variableCostPerUnit: number;
+  unitPrice: number;
+  currentUnits: number;
+}): Promise<BreakEvenAnalysis> {
+  const { fixedCosts, variableCostPerUnit, unitPrice, currentUnits } = params;
+  
+  // Margem de Contribuição por Unidade = Preço - Custo Variável Unitário
+  const contributionMargin = unitPrice - variableCostPerUnit;
+  
+  // Razão de Margem de Contribuição = (Margem de Contribuição / Preço) * 100
+  const contributionMarginRatio = (contributionMargin / unitPrice) * 100;
+  
+  // Ponto de Equilíbrio em Unidades = Custos Fixos / Margem de Contribuição
+  const breakEvenUnits = Math.ceil(fixedCosts / contributionMargin);
+  
+  // Ponto de Equilíbrio em Receita = Custos Fixos / Razão de Margem de Contribuição
+  const breakEvenRevenue = fixedCosts / (contributionMarginRatio / 100);
+  
+  // Dados Atuais
+  const currentRevenue = currentUnits * unitPrice;
+  const variableCosts = currentUnits * variableCostPerUnit;
+  const currentProfit = currentRevenue - variableCosts - fixedCosts;
+  
+  // Margem de Segurança = Vendas Atuais - Ponto de Equilíbrio
+  const marginOfSafety = currentRevenue - breakEvenRevenue;
+  const marginOfSafetyPercentage = (marginOfSafety / currentRevenue) * 100;
+  
+  return {
+    breakEvenUnits: Math.round(breakEvenUnits),
+    breakEvenRevenue: Math.round(breakEvenRevenue * 100) / 100,
+    currentUnits,
+    currentRevenue: Math.round(currentRevenue * 100) / 100,
+    currentProfit: Math.round(currentProfit * 100) / 100,
+    marginOfSafety: Math.round(marginOfSafety * 100) / 100,
+    marginOfSafetyPercentage: Math.round(marginOfSafetyPercentage * 100) / 100,
+    contributionMargin: Math.round(contributionMargin * 100) / 100,
+    contributionMarginRatio: Math.round(contributionMarginRatio * 100) / 100,
+    fixedCosts,
+    variableCosts: Math.round(variableCosts * 100) / 100,
+    unitPrice,
+    variableCostPerUnit,
+  };
+}
+
+export async function analyzeBreakEvenScenarios(params: {
+  farmId: number;
+  fixedCosts: number;
+  variableCostPerUnit: number;
+  unitPrice: number;
+  currentUnits: number;
+}) {
+  const baseAnalysis = await calculateBreakEven(params);
+  
+  // Cenários de variação de preço
+  const priceScenarios = [
+    { label: 'Preço -10%', unitPrice: params.unitPrice * 0.9 },
+    { label: 'Preço Atual', unitPrice: params.unitPrice },
+    { label: 'Preço +10%', unitPrice: params.unitPrice * 1.1 },
+    { label: 'Preço +20%', unitPrice: params.unitPrice * 1.2 },
+  ];
+  
+  // Cenários de variação de custos
+  const costScenarios = [
+    { label: 'Custo +20%', variableCostPerUnit: params.variableCostPerUnit * 1.2 },
+    { label: 'Custo +10%', variableCostPerUnit: params.variableCostPerUnit * 1.1 },
+    { label: 'Custo Atual', variableCostPerUnit: params.variableCostPerUnit },
+    { label: 'Custo -10%', variableCostPerUnit: params.variableCostPerUnit * 0.9 },
+  ];
+  
+  // Calcular break-even para cada cenário de preço
+  const priceAnalysis = await Promise.all(
+    priceScenarios.map(async (scenario) => ({
+      ...scenario,
+      analysis: await calculateBreakEven({
+        ...params,
+        unitPrice: scenario.unitPrice,
+      }),
+    }))
+  );
+  
+  // Calcular break-even para cada cenário de custo
+  const costAnalysis = await Promise.all(
+    costScenarios.map(async (scenario) => ({
+      ...scenario,
+      analysis: await calculateBreakEven({
+        ...params,
+        variableCostPerUnit: scenario.variableCostPerUnit,
+      }),
+    }))
+  );
+  
+  // Análise de sensibilidade - impacto no lucro
+  const volumeScenarios = [50, 75, 100, 125, 150, 175, 200].map(percentage => {
+    const units = Math.round((params.currentUnits * percentage) / 100);
+    const revenue = units * params.unitPrice;
+    const variableCosts = units * params.variableCostPerUnit;
+    const profit = revenue - variableCosts - params.fixedCosts;
+    
+    return {
+      volumePercentage: percentage,
+      units,
+      revenue: Math.round(revenue * 100) / 100,
+      profit: Math.round(profit * 100) / 100,
+    };
+  });
+  
+  return {
+    baseAnalysis,
+    priceAnalysis,
+    costAnalysis,
+    volumeScenarios,
+  };
+}
+
+// ==================== Comparações entre Períodos ====================
+
+export interface PeriodComparison {
+  current: {
+    period: string;
+    revenue: number;
+    expenses: number;
+    profit: number;
+    transactions: number;
+  };
+  previous: {
+    period: string;
+    revenue: number;
+    expenses: number;
+    profit: number;
+    transactions: number;
+  };
+  comparison: {
+    revenueGrowth: number;
+    revenueGrowthPercentage: number;
+    expenseGrowth: number;
+    expenseGrowthPercentage: number;
+    profitGrowth: number;
+    profitGrowthPercentage: number;
+    transactionsGrowth: number;
+    transactionsGrowthPercentage: number;
+  };
+}
+
+export async function compareMonthOverMonth(farmId: number, year: number, month: number): Promise<PeriodComparison> {
+  const database = await getDb();
+  if (!database) throw new Error("Database not available");
+  
+  // Calcular mês anterior
+  let prevMonth = month - 1;
+  let prevYear = year;
+  if (prevMonth < 1) {
+    prevMonth = 12;
+    prevYear = year - 1;
+  }
+  
+  // Dados do mês atual
+  const currentStart = new Date(year, month - 1, 1);
+  const currentEnd = new Date(year, month, 0);
+  
+  const currentTransactions = await database.select()
+    .from(financialTransactions)
+    .where(
+      and(
+        eq(financialTransactions.farmId, farmId),
+        gte(financialTransactions.date, currentStart),
+        lte(financialTransactions.date, currentEnd)
+      )
+    );
+  
+  // Dados do mês anterior
+  const previousStart = new Date(prevYear, prevMonth - 1, 1);
+  const previousEnd = new Date(prevYear, prevMonth, 0);
+  
+  const previousTransactions = await database.select()
+    .from(financialTransactions)
+    .where(
+      and(
+        eq(financialTransactions.farmId, farmId),
+        gte(financialTransactions.date, previousStart),
+        lte(financialTransactions.date, previousEnd)
+      )
+    );
+  
+  // Calcular totais
+  const currentRevenue = currentTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+  const currentExpenses = currentTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+  const currentProfit = currentRevenue - currentExpenses;
+  
+  const previousRevenue = previousTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+  const previousExpenses = previousTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+  const previousProfit = previousRevenue - previousExpenses;
+  
+  // Calcular crescimentos
+  const revenueGrowth = currentRevenue - previousRevenue;
+  const revenueGrowthPercentage = previousRevenue > 0 ? (revenueGrowth / previousRevenue) * 100 : 0;
+  
+  const expenseGrowth = currentExpenses - previousExpenses;
+  const expenseGrowthPercentage = previousExpenses > 0 ? (expenseGrowth / previousExpenses) * 100 : 0;
+  
+  const profitGrowth = currentProfit - previousProfit;
+  const profitGrowthPercentage = previousProfit !== 0 ? (profitGrowth / Math.abs(previousProfit)) * 100 : 0;
+  
+  const transactionsGrowth = currentTransactions.length - previousTransactions.length;
+  const transactionsGrowthPercentage = previousTransactions.length > 0 
+    ? (transactionsGrowth / previousTransactions.length) * 100 
+    : 0;
+  
+  return {
+    current: {
+      period: `${month}/${year}`,
+      revenue: currentRevenue,
+      expenses: currentExpenses,
+      profit: currentProfit,
+      transactions: currentTransactions.length,
+    },
+    previous: {
+      period: `${prevMonth}/${prevYear}`,
+      revenue: previousRevenue,
+      expenses: previousExpenses,
+      profit: previousProfit,
+      transactions: previousTransactions.length,
+    },
+    comparison: {
+      revenueGrowth,
+      revenueGrowthPercentage,
+      expenseGrowth,
+      expenseGrowthPercentage,
+      profitGrowth,
+      profitGrowthPercentage,
+      transactionsGrowth,
+      transactionsGrowthPercentage,
+    },
+  };
+}
+
+export async function compareYearOverYear(farmId: number, year: number): Promise<PeriodComparison> {
+  const database = await getDb();
+  if (!database) throw new Error("Database not available");
+  
+  // Dados do ano atual
+  const currentStart = new Date(year, 0, 1);
+  const currentEnd = new Date(year, 11, 31);
+  
+  const currentTransactions = await database.select()
+    .from(financialTransactions)
+    .where(
+      and(
+        eq(financialTransactions.farmId, farmId),
+        gte(financialTransactions.date, currentStart),
+        lte(financialTransactions.date, currentEnd)
+      )
+    );
+  
+  // Dados do ano anterior
+  const previousStart = new Date(year - 1, 0, 1);
+  const previousEnd = new Date(year - 1, 11, 31);
+  
+  const previousTransactions = await database.select()
+    .from(financialTransactions)
+    .where(
+      and(
+        eq(financialTransactions.farmId, farmId),
+        gte(financialTransactions.date, previousStart),
+        lte(financialTransactions.date, previousEnd)
+      )
+    );
+  
+  // Calcular totais
+  const currentRevenue = currentTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+  const currentExpenses = currentTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+  const currentProfit = currentRevenue - currentExpenses;
+  
+  const previousRevenue = previousTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+  const previousExpenses = previousTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+  const previousProfit = previousRevenue - previousExpenses;
+  
+  // Calcular crescimentos
+  const revenueGrowth = currentRevenue - previousRevenue;
+  const revenueGrowthPercentage = previousRevenue > 0 ? (revenueGrowth / previousRevenue) * 100 : 0;
+  
+  const expenseGrowth = currentExpenses - previousExpenses;
+  const expenseGrowthPercentage = previousExpenses > 0 ? (expenseGrowth / previousExpenses) * 100 : 0;
+  
+  const profitGrowth = currentProfit - previousProfit;
+  const profitGrowthPercentage = previousProfit !== 0 ? (profitGrowth / Math.abs(previousProfit)) * 100 : 0;
+  
+  const transactionsGrowth = currentTransactions.length - previousTransactions.length;
+  const transactionsGrowthPercentage = previousTransactions.length > 0 
+    ? (transactionsGrowth / previousTransactions.length) * 100 
+    : 0;
+  
+  return {
+    current: {
+      period: `${year}`,
+      revenue: currentRevenue,
+      expenses: currentExpenses,
+      profit: currentProfit,
+      transactions: currentTransactions.length,
+    },
+    previous: {
+      period: `${year - 1}`,
+      revenue: previousRevenue,
+      expenses: previousExpenses,
+      profit: previousProfit,
+      transactions: previousTransactions.length,
+    },
+    comparison: {
+      revenueGrowth,
+      revenueGrowthPercentage,
+      expenseGrowth,
+      expenseGrowthPercentage,
+      profitGrowth,
+      profitGrowthPercentage,
+      transactionsGrowth,
+      transactionsGrowthPercentage,
+    },
+  };
+}
+
+export async function getMonthlyTrend(farmId: number, months: number = 12) {
+  const database = await getDb();
+  if (!database) return [];
+  
+  const trends = [];
+  const now = new Date();
+  
+  for (let i = months - 1; i >= 0; i--) {
+    const targetDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const year = targetDate.getFullYear();
+    const month = targetDate.getMonth() + 1;
+    
+    const monthStart = new Date(year, month - 1, 1);
+    const monthEnd = new Date(year, month, 0);
+    
+    const transactions = await database.select()
+      .from(financialTransactions)
+      .where(
+        and(
+          eq(financialTransactions.farmId, farmId),
+          gte(financialTransactions.date, monthStart),
+          lte(financialTransactions.date, monthEnd)
+        )
+      );
+    
+    const revenue = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+    const expenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+    const profit = revenue - expenses;
+    
+    trends.push({
+      period: `${month.toString().padStart(2, '0')}/${year}`,
+      month,
+      year,
+      revenue,
+      expenses,
+      profit,
+      transactions: transactions.length,
+    });
+  }
+  
+  return trends;
 }

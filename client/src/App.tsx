@@ -3,6 +3,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
+import DashboardLayout from "./components/DashboardLayout";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
@@ -24,33 +25,134 @@ import Notifications from "./pages/Notifications";
 import Goals from "./pages/Goals";
 import Analytics from "./pages/Analytics";
 import Alerts from "./pages/Alerts";
+import Budget from "./pages/Budget";
+import Admin from "./pages/Admin";
+import Projections from "./pages/Projections";
+import BreakEven from "./pages/BreakEven";
 import Subscription from "./pages/Subscription";
 
 function Router() {
-  // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
+      {/* Rotas públicas */}
       <Route path={"/"} component={Home} />
-      <Route path={"/onboarding"} component={Onboarding} />
-      <Route path={"/dashboard"} component={Dashboard} />
-      <Route path={"/financial"} component={Financial} />
-      <Route path={"/inventory"} component={Inventory} />
-      <Route path={"/planning"} component={Planning} />
-      <Route path={"/animals"} component={Animals} />
       <Route path={"/pricing"} component={Pricing} />
-      <Route path={"/esg"} component={ESG} />
-      <Route path={"/challenges"} component={Challenges} />
-      <Route path={"/ranking"} component={Ranking} />
-      <Route path={"/milk-production"} component={MilkProduction} />
-      <Route path={"/reproduction"} component={Reproduction} />
-      <Route path={"/health"} component={Health} />
-      <Route path={"/pastures"} component={Pastures} />
-      <Route path={"/reports"} component={Reports} />
-      <Route path={"/notifications"} component={Notifications} />
-      <Route path={"/goals"} component={Goals} />
-      <Route path={"/analytics"} component={Analytics} />
-      <Route path={"/alerts"} component={Alerts} />
-      <Route path={"/subscription"} component={Subscription} />
+      <Route path={"/onboarding"} component={Onboarding} />
+
+      {/* Rotas protegidas que requerem assinatura ativa */}
+      <Route path={"/dashboard"}>
+        <DashboardLayout>
+          <Dashboard />
+        </DashboardLayout>
+      </Route>
+      <Route path={"/financial"}>
+        <DashboardLayout>
+          <Financial />
+        </DashboardLayout>
+      </Route>
+      <Route path={"/inventory"}>
+        <DashboardLayout>
+          <Inventory />
+        </DashboardLayout>
+      </Route>
+      <Route path={"/planning"}>
+        <DashboardLayout>
+          <Planning />
+        </DashboardLayout>
+      </Route>
+      <Route path={"/animals"}>
+        <DashboardLayout>
+          <Animals />
+        </DashboardLayout>
+      </Route>
+      <Route path={"/esg"}>
+        <DashboardLayout>
+          <ESG />
+        </DashboardLayout>
+      </Route>
+      <Route path={"/challenges"}>
+        <DashboardLayout>
+          <Challenges />
+        </DashboardLayout>
+      </Route>
+      <Route path={"/ranking"}>
+        <DashboardLayout>
+          <Ranking />
+        </DashboardLayout>
+      </Route>
+      <Route path={"/milk-production"}>
+        <DashboardLayout>
+          <MilkProduction />
+        </DashboardLayout>
+      </Route>
+      <Route path={"/reproduction"}>
+        <DashboardLayout>
+          <Reproduction />
+        </DashboardLayout>
+      </Route>
+      <Route path={"/health"}>
+        <DashboardLayout>
+          <Health />
+        </DashboardLayout>
+      </Route>
+      <Route path={"/pastures"}>
+        <DashboardLayout>
+          <Pastures />
+        </DashboardLayout>
+      </Route>
+      <Route path={"/reports"}>
+        <DashboardLayout>
+          <Reports />
+        </DashboardLayout>
+      </Route>
+      <Route path={"/notifications"}>
+        <DashboardLayout>
+          <Notifications />
+        </DashboardLayout>
+      </Route>
+      <Route path={"/goals"}>
+        <DashboardLayout>
+          <Goals />
+        </DashboardLayout>
+      </Route>
+      <Route path={"/analytics"}>
+        <DashboardLayout>
+          <Analytics />
+        </DashboardLayout>
+      </Route>
+      <Route path={"/alerts"}>
+        <DashboardLayout>
+          <Alerts />
+        </DashboardLayout>
+      </Route>
+      <Route path={"/budget"}>
+        <DashboardLayout>
+          <Budget />
+        </DashboardLayout>
+      </Route>
+      <Route path={"/projections"}>
+        <DashboardLayout>
+          <Projections />
+        </DashboardLayout>
+      </Route>
+      <Route path={"/breakeven"}>
+        <DashboardLayout>
+          <BreakEven />
+        </DashboardLayout>
+      </Route>
+      <Route path={"/subscription"}>
+        <DashboardLayout requireSubscription={false}>
+          <Subscription />
+        </DashboardLayout>
+      </Route>
+
+      {/* Rota administrativa (requer role admin) */}
+      <Route path={"/admin"}>
+        <DashboardLayout requireAdmin={true}>
+          <Admin />
+        </DashboardLayout>
+      </Route>
+
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
