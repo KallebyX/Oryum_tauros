@@ -24,6 +24,7 @@ import Notifications from "./pages/Notifications";
 import Goals from "./pages/Goals";
 import Analytics from "./pages/Analytics";
 import Alerts from "./pages/Alerts";
+import Subscription from "./pages/Subscription";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -49,6 +50,7 @@ function Router() {
       <Route path={"/goals"} component={Goals} />
       <Route path={"/analytics"} component={Analytics} />
       <Route path={"/alerts"} component={Alerts} />
+      <Route path={"/subscription"} component={Subscription} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
