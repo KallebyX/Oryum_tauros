@@ -72,7 +72,7 @@ export default function DashboardLayout({
               </div>
             </div>
             <div className="text-center space-y-2">
-              <h1 className="text-2xl font-bold tracking-tight">{APP_TITLE}</h1>
+              <h1 className="text-2xl font-bold tracking-tight">Oryum Tauros</h1>
               <p className="text-sm text-muted-foreground">
                 Please sign in to continue
               </p>
@@ -194,7 +194,7 @@ function DashboardLayoutContent({
                       alt="Logo"
                     />
                     <span className="font-semibold tracking-tight truncate">
-                      {APP_TITLE}
+                      Oryum Tauros
                     </span>
                   </div>
                   <button

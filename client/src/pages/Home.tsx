@@ -30,7 +30,7 @@ export default function Home() {
             {APP_LOGO && (
               <img src={APP_LOGO} alt={APP_TITLE} className="h-8 w-8" />
             )}
-            <span className="font-bold text-xl text-primary">{APP_TITLE}</span>
+            <span className="font-bold text-xl text-primary">Oryum Tauros</span>
           </div>
           
           {/* Desktop Navigation */}
@@ -367,7 +367,7 @@ export default function Home() {
                 {APP_LOGO && (
                   <img src={APP_LOGO} alt={APP_TITLE} className="h-8 w-8" />
                 )}
-                <span className="font-bold text-xl text-white">{APP_TITLE}</span>
+                <span className="font-bold text-xl text-white">Oryum Tauros</span>
               </div>
               <p className="text-sm">
                 ERP Rural Inteligente para gestão sustentável e produtiva
@@ -398,7 +398,7 @@ export default function Home() {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm">
-            <p>&copy; 2024 {APP_TITLE}. Todos os direitos reservados.</p>
+            <p>&copy; 2025 <a href="https://www.oryumtech.com.br/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Oryum Tech</a>. Todos os direitos reservados.</p>
           </div>
         </div>
       </footer>

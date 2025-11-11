@@ -483,6 +483,7 @@ export const appRouter = router({
     createCheckout: protectedProcedure
       .input(z.object({
         priceId: z.string(),
+        couponCode: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const { createCheckoutSession } = await import("./_core/stripe");
@@ -495,10 +496,31 @@ export const appRouter = router({
           userEmail: ctx.user.email || undefined,
           successUrl: `${baseUrl}/pricing?success=true`,
           cancelUrl: `${baseUrl}/pricing?canceled=true`,
+          couponCode: input.couponCode,
         });
         
         return { url: session.url };
       }),
+    
+    createPortalSession: protectedProcedure.mutation(async ({ ctx }) => {
+      const { createCustomerPortalSession } = await import("./_core/stripe");
+      
+      // Buscar assinatura do usuário para obter customerId
+      const subscription = await db.getSubscriptionByUserId(ctx.user.id);
+      
+      if (!subscription || !subscription.stripeCustomerId) {
+        throw new Error("Nenhuma assinatura ativa encontrada");
+      }
+      
+      const baseUrl = process.env.VITE_FRONTEND_FORGE_API_URL || "http://localhost:3000";
+      
+      const session = await createCustomerPortalSession({
+        customerId: subscription.stripeCustomerId,
+        returnUrl: `${baseUrl}/subscription`,
+      });
+      
+      return { url: session.url };
+    }),
   }),
   
   reproduction: router({

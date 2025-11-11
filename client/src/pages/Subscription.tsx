@@ -48,6 +48,7 @@ const planFeatures: Record<string, string[]> = {
 
 export default function Subscription() {
   const { user, isAuthenticated, loading } = useAuth();
+  const createPortalMutation = trpc.subscription.createPortalSession.useMutation();
   
   const { data: subscription, isLoading, refetch } = trpc.subscription.current.useQuery(
     undefined,
@@ -213,37 +214,26 @@ export default function Subscription() {
                   <Button 
                     variant="outline" 
                     className="w-full"
-                    onClick={() => {
-                      toast.info("Abrindo portal de gerenciamento do Stripe...");
-                      // TODO: Implementar redirect para Stripe Customer Portal
-                    }}
-                  >
-                    <CreditCard className="h-4 w-4 mr-2" />
-                    Atualizar Método de Pagamento
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => window.location.href = "/pricing"}
-                  >
-                    <TrendingUp className="h-4 w-4 mr-2" />
-                    Fazer Upgrade de Plano
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
-                    onClick={() => {
-                      if (confirm("Tem certeza que deseja cancelar sua assinatura? Você perderá acesso aos recursos premium.")) {
-                        toast.error("Funcionalidade de cancelamento em desenvolvimento");
-                        // TODO: Implementar cancelamento via Stripe
+                    disabled={createPortalMutation.isPending}
+                    onClick={async () => {
+                      try {
+                        const result = await createPortalMutation.mutateAsync();
+                        if (result.url) {
+                          window.location.href = result.url;
+                        }
+                      } catch (error) {
+                        toast.error("Erro ao abrir portal de gerenciamento");
+                        console.error(error);
                       }
                     }}
                   >
-                    <X className="h-4 w-4 mr-2" />
-                    Cancelar Assinatura
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    {createPortalMutation.isPending ? "Abrindo..." : "Gerenciar Pagamento e Assinatura"}
                   </Button>
+                  
+                  <p className="text-xs text-gray-500 mt-2">
+                    Use o portal acima para atualizar método de pagamento, visualizar faturas, fazer upgrade/downgrade ou cancelar sua assinatura.
+                  </p>
                 </div>
               </CardContent>
             </Card>

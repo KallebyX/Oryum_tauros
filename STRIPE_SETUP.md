@@ -106,7 +106,52 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_test_xxxxxxxxxxxxx
 
 ---
 
-## 🧪 Passo 3: Testar Fluxo de Pagamento
+## 🎟️ Passo 3: Criar Cupons de Desconto (Opcional)
+
+### 3.1 Acessar Cupons
+
+1. No Dashboard Stripe, vá para **Products** → **Coupons**
+2. Clique em **+ Create coupon**
+
+### 3.2 Tipos de Cupons
+
+**Cupom de Porcentagem:**
+- **Name**: PRIMEIROANO20
+- **Type**: Percentage discount
+- **Percent off**: 20%
+- **Duration**: Forever / Once / Repeating
+- **Applies to**: All products
+
+**Cupom de Valor Fixo:**
+- **Name**: DESCONTO50
+- **Type**: Fixed amount
+- **Amount off**: R$ 50,00
+- **Currency**: BRL
+- **Duration**: Once
+
+**Cupom de Trial Gratuito:**
+- **Name**: TRIAL30DIAS
+- **Type**: Free trial
+- **Duration**: 30 days
+
+### 3.3 Configurações Avançadas
+
+- **Redemption limits**: Limite de uso (ex: 100 vezes)
+- **Expiration date**: Data de expiração
+- **Customer eligibility**: Todos ou clientes específicos
+
+### 3.4 Usar Cupons no Sistema
+
+1. Usuário acessa `/pricing`
+2. Insere código do cupom no campo "Tem um cupom de desconto?"
+3. Código é validado automaticamente no checkout Stripe
+4. Desconto aplicado na primeira cobrança (ou conforme configuração)
+
+**⚠️ Importante:** O sistema envia o código do cupom para o Stripe, que valida automaticamente. Não é necessário validação manual no backend.
+
+---
+
+## 🧪 Passo 4: Testar Fluxo de Pagamento
 
 ### 3.1 Cartões de Teste
 
@@ -139,7 +184,7 @@ Use os seguintes cartões de teste do Stripe:
 
 ---
 
-## 🔄 Passo 4: Migrar para Produção
+## 🔄 Passo 5: Migrar para Produção
 
 ### 4.1 Ativar Modo Produção no Stripe
 
@@ -171,7 +216,7 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_live_xxxxxxxxxxxxx
 
 ---
 
-## 📊 Monitoramento e Manutenção
+## 📊 Passo 6: Monitoramento e Manutenção
 
 ### Verificar Assinaturas Ativas
 
@@ -203,7 +248,11 @@ Monitore no Dashboard Stripe:
 
 ---
 
-## 🆘 Troubleshooting
+## 🆘 Passo 7: Troubleshooting
+
+### Problema: Cupom não aplicado
+
+**Solução**: Verifique se o código do cupom está correto (case-sensitive) e se não expirou no Dashboard Stripe.
 
 ### Problema: Webhook retorna erro 400
 
@@ -243,6 +292,9 @@ Monitore no Dashboard Stripe:
 - [ ] Webhook retornando 200 OK
 - [ ] Página de pricing mostrando planos corretamente
 - [ ] Redirecionamento pós-pagamento funcionando
+- [ ] Cupons de desconto criados (opcional)
+- [ ] Teste com cupom realizado (opcional)
+- [ ] Customer Portal configurado para gerenciar assinaturas
 
 ---
 

@@ -18,12 +18,13 @@ export async function createCheckoutSession(params: {
   userEmail?: string;
   successUrl: string;
   cancelUrl: string;
+  couponCode?: string;
 }) {
   if (!stripe) {
     throw new Error("Stripe is not configured");
   }
 
-  const session = await stripe.checkout.sessions.create({
+  const sessionConfig: Stripe.Checkout.SessionCreateParams = {
     mode: "subscription",
     payment_method_types: ["card"],
     line_items: [
@@ -41,7 +42,18 @@ export async function createCheckoutSession(params: {
       farmId: params.userId.toString(), // Usando userId como farmId por enquanto
       plan: params.priceId.includes("basic") ? "basic" : params.priceId.includes("professional") ? "professional" : "enterprise",
     },
-  });
+  };
+  
+  // Adicionar cupom se fornecido
+  if (params.couponCode) {
+    sessionConfig.discounts = [
+      {
+        coupon: params.couponCode,
+      },
+    ];
+  }
+  
+  const session = await stripe.checkout.sessions.create(sessionConfig);
 
   return session;
 }
@@ -60,6 +72,22 @@ export async function cancelSubscription(subscriptionId: string) {
   }
 
   return await stripe.subscriptions.cancel(subscriptionId);
+}
+
+export async function createCustomerPortalSession(params: {
+  customerId: string;
+  returnUrl: string;
+}) {
+  if (!stripe) {
+    throw new Error("Stripe is not configured");
+  }
+
+  const session = await stripe.billingPortal.sessions.create({
+    customer: params.customerId,
+    return_url: params.returnUrl,
+  });
+
+  return session;
 }
 
 export async function constructWebhookEvent(

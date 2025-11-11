@@ -124,6 +124,14 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     currentPeriodEnd: subscriptionData.current_period_end ? new Date(subscriptionData.current_period_end * 1000) : undefined,
   });
 
+  // Enviar notificação de boas-vindas
+  await db.createNotification({
+    userId: farmId,
+    type: "other",
+    title: "Assinatura ativada com sucesso! 🎉",
+    message: `Bem-vindo ao plano ${plan === "basic" ? "Básico" : plan === "professional" ? "Profissional" : "Empresarial"}! Sua assinatura está ativa e você já pode aproveitar todos os recursos.`,
+  });
+
   console.log(`[Stripe Webhook] Subscription created for farm ${farmId}, plan: ${plan}`);
 }
 
@@ -147,6 +155,16 @@ async function handleSubscriptionUpdated(subscription: any) {
     currentPeriodEnd: subscription.current_period_end ? new Date(subscription.current_period_end * 1000) : undefined,
   });
 
+  // Notificar sobre mudanças importantes no status
+  if (subscription.status === "active" && farmSubscription.status !== "active") {
+    await db.createNotification({
+      userId: farmSubscription.userId,
+      type: "other",
+      title: "Assinatura reativada",
+      message: "Sua assinatura foi reativada com sucesso. Todos os recursos estão disponíveis novamente.",
+    });
+  }
+
   console.log(`[Stripe Webhook] Subscription ${subscription.id} updated, status: ${subscription.status}`);
 }
 
@@ -166,6 +184,14 @@ async function handleSubscriptionDeleted(subscription: any) {
   // Atualizar status para canceled
   await db.updateSubscription(farmSubscription.id, {
     status: "canceled",
+  });
+
+  // Notificar sobre cancelamento
+  await db.createNotification({
+    userId: farmSubscription.userId,
+    type: "other",
+    title: "Assinatura cancelada",
+    message: "Sua assinatura foi cancelada. Você ainda pode acessar o sistema até o final do período já pago. Para reativar, visite a página de planos.",
   });
 
   console.log(`[Stripe Webhook] Subscription ${subscription.id} canceled`);
@@ -192,6 +218,16 @@ async function handleInvoicePaymentSucceeded(invoice: any) {
   // Pagamento bem-sucedido - subscription já está ativa
   console.log(`[Stripe Webhook] Payment successful for farm ${farmSubscription.userId}`);
 
+  // Notificar sobre pagamento bem-sucedido (apenas se não for o primeiro pagamento)
+  if (invoice.billing_reason === "subscription_cycle") {
+    await db.createNotification({
+      userId: farmSubscription.userId,
+      type: "other",
+      title: "Pagamento processado com sucesso",
+      message: `Seu pagamento de ${invoice.amount_paid ? (invoice.amount_paid / 100).toLocaleString("pt-BR", { style: "currency", currency: invoice.currency?.toUpperCase() || "BRL" }) : ""} foi processado. Sua assinatura continua ativa.`,
+    });
+  }
+
   console.log(`[Stripe Webhook] Payment recorded for subscription ${subscriptionId}`);
 }
 
@@ -216,6 +252,14 @@ async function handleInvoicePaymentFailed(invoice: any) {
   // Atualizar status para past_due
   await db.updateSubscription(farmSubscription.id, {
     status: "past_due",
+  });
+
+  // Notificar sobre falha no pagamento
+  await db.createNotification({
+    userId: farmSubscription.userId,
+    type: "other",
+    title: "Falha no pagamento da assinatura",
+    message: "Não conseguimos processar seu pagamento. Por favor, atualize seu método de pagamento para evitar a interrupção do serviço. Acesse Gerenciar Assinatura para atualizar.",
   });
 
   console.log(`[Stripe Webhook] Payment failed for subscription ${subscriptionId}`);

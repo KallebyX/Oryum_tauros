@@ -74,6 +74,7 @@ const plans = [
 export default function Pricing() {
   const { user, isAuthenticated } = useAuth();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [couponCode, setCouponCode] = useState<string>("");
 
   const { data: currentSubscription } = trpc.subscription.current.useQuery(
     undefined,
@@ -99,7 +100,10 @@ export default function Pricing() {
     }
 
     setLoadingPlan(planId);
-    createCheckout.mutate({ priceId });
+    createCheckout.mutate({ 
+      priceId,
+      couponCode: couponCode.trim() || undefined 
+    });
   };
 
   const isCurrentPlan = (planId: string) => {
@@ -121,8 +125,46 @@ export default function Pricing() {
         </div>
       </div>
 
+      {/* Cupom de Desconto */}
+      <div className="max-w-7xl mx-auto px-8 pt-8">
+        <Card className="bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-200">
+          <CardContent className="py-6">
+            <div className="flex flex-col md:flex-row items-center gap-4">
+              <div className="flex-1">
+                <h3 className="font-semibold text-gray-900 mb-1">Tem um cupom de desconto?</h3>
+                <p className="text-sm text-gray-600">Insira seu código promocional para obter desconto na assinatura</p>
+              </div>
+              <div className="flex gap-2 w-full md:w-auto">
+                <input
+                  type="text"
+                  placeholder="Código do cupom"
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none w-full md:w-48"
+                />
+                {couponCode && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCouponCode("")}
+                    className="shrink-0"
+                  >
+                    Limpar
+                  </Button>
+                )}
+              </div>
+            </div>
+            {couponCode && (
+              <p className="text-sm text-green-700 mt-2 font-medium">
+                ✓ Cupom "{couponCode}" será aplicado no checkout
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Pricing Cards */}
-      <div className="max-w-7xl mx-auto px-8 py-16">
+      <div className="max-w-7xl mx-auto px-8 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {plans.map((plan) => {
             const Icon = plan.icon;
