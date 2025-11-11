@@ -947,6 +947,28 @@ export const appRouter = router({
         };
       }),
   }),
+  
+  notifications: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getNotificationsByUserId(ctx.user.id);
+    }),
+    
+    unreadCount: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getUnreadNotificationsCount(ctx.user.id);
+    }),
+    
+    markAsRead: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.markNotificationAsRead(input.id);
+        return { success: true };
+      }),
+    
+    markAllAsRead: protectedProcedure.mutation(async ({ ctx }) => {
+      await db.markAllNotificationsAsRead(ctx.user.id);
+      return { success: true };
+    }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

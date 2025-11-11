@@ -19,6 +19,8 @@ import MilkProduction from "./pages/MilkProduction";
 import Reproduction from "./pages/Reproduction";
 import Health from "./pages/Health";
 import Pastures from "./pages/Pastures";
+import Reports from "./pages/Reports";
+import Notifications from "./pages/Notifications";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -39,6 +41,8 @@ function Router() {
       <Route path={"/reproduction"} component={Reproduction} />
       <Route path={"/health"} component={Health} />
       <Route path={"/pastures"} component={Pastures} />
+      <Route path={"/reports"} component={Reports} />
+      <Route path={"/notifications"} component={Notifications} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

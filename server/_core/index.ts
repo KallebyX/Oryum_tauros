@@ -9,6 +9,7 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { handleStripeWebhook } from "../webhooks/stripe";
 import { registerReportRoutes } from "../reports";
+import { scheduleDailyNotifications } from "../jobs/dailyNotifications";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -45,6 +46,9 @@ async function startServer() {
   
   // Rotas de relatórios PDF
   registerReportRoutes(app);
+  
+  // Agendar job diário de notificações
+  scheduleDailyNotifications();
   // tRPC API
   app.use(
     "/api/trpc",

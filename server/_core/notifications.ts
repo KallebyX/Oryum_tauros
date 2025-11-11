@@ -1,4 +1,5 @@
 import { ENV } from "./env";
+import * as db from "../db";
 
 interface NotificationPayload {
   userId: number;
@@ -13,6 +14,14 @@ interface NotificationPayload {
  */
 export async function sendNotification(payload: NotificationPayload): Promise<boolean> {
   try {
+    // Salvar notificação no banco de dados
+    await db.createNotification({
+      userId: payload.userId,
+      type: "other",
+      title: payload.title,
+      message: payload.content,
+    });
+    
     const response = await fetch(`${ENV.forgeApiUrl}/notifications/send`, {
       method: "POST",
       headers: {

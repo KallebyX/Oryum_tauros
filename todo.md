@@ -238,3 +238,27 @@
 - [x] Implementar notificações para conquistas de desafios
 - [ ] Criar página de histórico de notificações
 - [ ] Adicionar badge de notificações não lidas no header
+
+
+## 🚀 Funcionalidades Finais em Desenvolvimento
+
+### Página de Relatórios
+- [x] Criar página /reports no frontend
+- [x] Adicionar seletor de tipo de relatório (Financeiro, ESG, Produção)
+- [x] Implementar seletor de período de datas
+- [x] Adicionar botão de download que chama endpoints de relatórios
+- [x] Mostrar preview ou confirmação antes do download
+
+### Job Agendado de Notificações
+- [x] Criar script de verificação diária de vacinações
+- [x] Criar script de verificação diária de tarefas pendentes
+- [x] Configurar cron job ou scheduler para rodar diariamente
+- [x] Adicionar logs de execução do job
+
+### Painel de Notificações
+- [x] Criar componente de sino (bell icon) no header
+- [x] Adicionar badge com contagem de notificações não lidas
+- [x] Implementar dropdown com últimas notificações
+- [x] Criar página /notifications com histórico completo
+- [x] Adicionar filtros por tipo de notificação
+- [x] Implementar marcação de notificações como lidas

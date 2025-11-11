@@ -10,6 +10,7 @@ import {
   esgResponses, InsertESGResponse, badges, InsertBadge,
   challenges, InsertChallenge, challengeProgress, InsertChallengeProgress,
   aiRecommendations, InsertAIRecommendation, planningTasks, InsertPlanningTask,
+  notifications, InsertNotification,
   subscriptions, InsertSubscription
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -895,4 +896,58 @@ export async function deleteSupplementation(id: number) {
   const db = await getDb();
   if (!db) return;
   await db.delete(supplementation).where(eq(supplementation.id, id));
+}
+
+
+// ========== NOTIFICATION HELPERS ==========
+
+export async function createNotification(notification: InsertNotification) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(notifications).values(notification);
+  return result[0].insertId;
+}
+
+export async function getNotificationsByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(notifications)
+    .where(eq(notifications.userId, userId))
+    .orderBy(desc(notifications.createdAt));
+}
+
+export async function getUnreadNotificationsCount(userId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+
+  const result = await db
+    .select()
+    .from(notifications)
+    .where(and(eq(notifications.userId, userId), eq(notifications.read, false)));
+
+  return result.length;
+}
+
+export async function markNotificationAsRead(notificationId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .update(notifications)
+    .set({ read: true })
+    .where(eq(notifications.id, notificationId));
+}
+
+export async function markAllNotificationsAsRead(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .update(notifications)
+    .set({ read: true })
+    .where(eq(notifications.userId, userId));
 }

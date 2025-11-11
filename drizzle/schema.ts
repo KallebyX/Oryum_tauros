@@ -376,3 +376,19 @@ export const planningTasks = mysqlTable("planning_tasks", {
 
 export type PlanningTask = typeof planningTasks.$inferSelect;
 export type InsertPlanningTask = typeof planningTasks.$inferInsert;
+
+/**
+ * Notificações
+ */
+export const notifications = mysqlTable("notifications", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  type: mysqlEnum("type", ["vaccination", "task", "challenge", "stock", "other"]).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  read: boolean("read").default(false),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = typeof notifications.$inferInsert;
