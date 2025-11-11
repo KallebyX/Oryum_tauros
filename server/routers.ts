@@ -369,8 +369,20 @@ export const appRouter = router({
         farmId: z.number(),
         challengeId: z.number(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         await db.completeChallenge(input.farmId, input.challengeId);
+        
+        // Enviar notificação de conquista
+        if (ctx.user) {
+          const challenges = await db.getActiveChallenges();
+          const challenge = challenges.find((c: any) => c.id === input.challengeId);
+          
+          if (challenge) {
+            const { notifyChallengeCompleted } = await import("./_core/notifications");
+            await notifyChallengeCompleted(ctx.user.id, challenge.title, challenge.points);
+          }
+        }
+        
         return { success: true };
       }),
     
@@ -421,11 +433,23 @@ export const appRouter = router({
         dueDate: z.string(),
         priority: z.enum(["low", "medium", "high"]).optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const taskId = await db.createPlanningTask({
           ...input,
           dueDate: new Date(input.dueDate)
         });
+        
+        // Enviar notificação se tarefa vence em 3 dias ou menos
+        if (ctx.user) {
+          const dueDate = new Date(input.dueDate);
+          const daysUntil = Math.ceil((dueDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+          
+          if (daysUntil <= 3 && daysUntil >= 0) {
+            const { notifyPendingTask } = await import("./_core/notifications");
+            await notifyPendingTask(ctx.user.id, input.title, dueDate);
+          }
+        }
+        
         return { taskId };
       }),
     
@@ -538,8 +562,7 @@ export const appRouter = router({
     create: protectedProcedure
       .input(z.object({
         farmId: z.number(),
-        animalId: z.number().optional(),
-        batchId: z.number().optional(),
+        animalId: z.number(),
         vaccineType: z.string(),
         date: z.string(),
         dosage: z.string().optional(),
@@ -547,12 +570,26 @@ export const appRouter = router({
         nextDueDate: z.string().optional(),
         notes: z.string().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const vaccinationId = await db.createVaccination({
           ...input,
           date: new Date(input.date),
           nextDueDate: input.nextDueDate ? new Date(input.nextDueDate) : undefined,
         });
+        
+        // Enviar notificação se houver próxima dose
+        if (input.nextDueDate && ctx.user) {
+          const animal = await db.getAnimalById(input.animalId);
+          const nextDate = new Date(input.nextDueDate);
+          const daysUntil = Math.ceil((nextDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+          
+          // Notificar se faltar 7 dias ou menos
+          if (daysUntil <= 7 && animal) {
+            const { notifyVaccinationAlert } = await import("./_core/notifications");
+            await notifyVaccinationAlert(ctx.user.id, animal.tagId, input.vaccineType, nextDate);
+          }
+        }
+        
         return { vaccinationId };
       }),
     
@@ -854,6 +891,60 @@ export const appRouter = router({
       .input(z.object({ farmId: z.number() }))
       .query(async ({ input }) => {
         return await db.getAIRecommendationsByFarmId(input.farmId);
+      }),
+  }),
+  
+  reports: router({
+    financial: protectedProcedure
+      .input(z.object({
+        farmId: z.number(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const transactions = await db.getTransactionsByFarmId(
+          input.farmId,
+          input.startDate ? new Date(input.startDate) : undefined,
+          input.endDate ? new Date(input.endDate) : undefined
+        );
+        
+        const summary = await db.getFinancialSummary(
+          input.farmId,
+          input.startDate ? new Date(input.startDate) : undefined,
+          input.endDate ? new Date(input.endDate) : undefined
+        );
+        
+        // Retornar URL para download (será implementado via endpoint separado)
+        return {
+          success: true,
+          downloadUrl: `/api/reports/financial/${input.farmId}?start=${input.startDate || ''}&end=${input.endDate || ''}`,
+        };
+      }),
+    
+    esg: protectedProcedure
+      .input(z.object({ farmId: z.number() }))
+      .mutation(async ({ input }) => {
+        const score = await db.calculateESGScore(input.farmId);
+        const responses = await db.getESGResponsesByFarmId(input.farmId);
+        const badges = await db.getBadgesByFarmId(input.farmId);
+        const badge = badges.length > 0 ? badges[0] : null;
+        
+        return {
+          success: true,
+          downloadUrl: `/api/reports/esg/${input.farmId}`,
+        };
+      }),
+    
+    production: protectedProcedure
+      .input(z.object({ farmId: z.number() }))
+      .mutation(async ({ input }) => {
+        const animals = await db.getAnimalsByFarmId(input.farmId);
+        const milkProduction = await db.getMilkProductionByFarmId(input.farmId);
+        
+        return {
+          success: true,
+          downloadUrl: `/api/reports/production/${input.farmId}`,
+        };
       }),
   }),
 });

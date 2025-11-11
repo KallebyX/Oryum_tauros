@@ -214,3 +214,27 @@
 - [x] Todas as páginas criadas (15 páginas)
 - [x] Banco de dados populado
 - [x] Servidor rodando sem erros
+
+
+## 🚀 Novas Funcionalidades em Desenvolvimento
+
+### Webhook Stripe
+- [x] Criar endpoint /api/webhooks/stripe
+- [x] Processar evento checkout.session.completed
+- [x] Processar evento customer.subscription.updated
+- [x] Processar evento customer.subscription.deleted
+- [x] Atualizar status de assinatura no banco automaticamente
+
+### Exportação de Relatórios
+- [x] Criar endpoint para exportar relatório financeiro (PDF)
+- [x] Criar endpoint para exportar relatório ESG (PDF)
+- [x] Criar endpoint para exportar relatório de produção (PDF)
+- [x] Adicionar gráficos aos relatórios
+- [ ] Criar página de Relatórios no frontend
+
+### Notificações Push
+- [x] Implementar notificações para alertas de vacinação
+- [x] Implementar notificações para tarefas pendentes
+- [x] Implementar notificações para conquistas de desafios
+- [ ] Criar página de histórico de notificações
+- [ ] Adicionar badge de notificações não lidas no header
