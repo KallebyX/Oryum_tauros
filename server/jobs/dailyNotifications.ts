@@ -4,6 +4,8 @@ import {
   notifyVaccinationAlert,
   notifyPendingTask,
   notifyLowStock,
+  notifyGoalCompleted,
+  notifyGoalDeadlineApproaching,
 } from "../_core/notifications";
 
 /**
@@ -22,6 +24,9 @@ export async function runDailyNotifications() {
 
     // 3. Verificar estoque baixo
     await checkLowStock();
+
+    // 4. Verificar metas (concluídas e próximas do prazo)
+    await checkGoals();
 
     console.log("[Daily Job] Daily notifications job completed successfully");
   } catch (error: any) {
@@ -186,4 +191,61 @@ export function scheduleDailyNotifications() {
     // Agendar execuções subsequentes a cada 24 horas
     setInterval(runDailyNotifications, 24 * 60 * 60 * 1000);
   }, msUntilNext);
+}
+
+
+/**
+ * Verificar metas concluídas e próximas do prazo
+ */
+async function checkGoals() {
+  console.log("[Daily Job] Checking goals...");
+
+  try {
+    const dbInstance = await db.getDb();
+    if (!dbInstance) return;
+    
+    const usersData = await dbInstance.select().from(users);
+    const farms = usersData.map((u: any) => ({ id: u.id, userId: u.id }));
+
+    for (const farm of farms) {
+      // Buscar metas ativas desta fazenda
+      const goals = await db.getGoalsByFarmId(farm.id);
+      const activeGoals = goals.filter((g: any) => g.status === "active");
+
+      for (const goal of activeGoals) {
+        const currentValue = parseFloat(goal.currentValue || "0");
+        const targetValue = parseFloat(goal.targetValue || "0");
+        const progress = (currentValue / targetValue) * 100;
+
+        // Verificar se meta foi concluída (100% de progresso)
+        if (progress >= 100) {
+          await notifyGoalCompleted(
+            farm.userId,
+            goal.title,
+            goal.targetValue || "0",
+            goal.unit || ""
+          );
+          console.log(`[Daily Job] Goal completed notification sent for goal ${goal.id}`);
+        }
+
+        // Verificar se faltam 7 dias ou menos para o prazo
+        const deadline = new Date(goal.deadline);
+        const now = new Date();
+        const daysLeft = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+        if (daysLeft <= 7 && daysLeft > 0 && progress < 100) {
+          await notifyGoalDeadlineApproaching(
+            farm.userId,
+            goal.title,
+            daysLeft
+          );
+          console.log(`[Daily Job] Goal deadline notification sent for goal ${goal.id} (${daysLeft} days left)`);
+        }
+      }
+    }
+
+    console.log("[Daily Job] Goals check completed");
+  } catch (error: any) {
+    console.error(`[Daily Job] Error checking goals: ${error.message}`);
+  }
 }

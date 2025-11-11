@@ -11,6 +11,7 @@ import {
   Leaf,
   TrendingUp,
   Users,
+  Target,
 } from "lucide-react";
 import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
@@ -44,6 +45,18 @@ export default function Dashboard() {
     { farmId: user?.farmId || 0 },
     { enabled: !!user?.farmId }
   );
+
+  // Buscar metas ativas
+  const { data: allGoals = [] } = trpc.goals.list.useQuery(
+    { farmId: user?.farmId || 0 },
+    { enabled: !!user?.farmId }
+  );
+
+  // Filtrar e ordenar as 3 metas mais próximas do prazo
+  const upcomingGoals = allGoals
+    .filter((g: any) => g.status === "active")
+    .sort((a: any, b: any) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
+    .slice(0, 3);
 
   if (!isAuthenticated || !user) {
     return (
@@ -357,6 +370,66 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Metas Próximas */}
+        {upcomingGoals.length > 0 && (
+          <div className="mt-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900">Metas em Andamento</h2>
+              <Link href="/goals">
+                <Button variant="outline" size="sm">
+                  Ver Todas
+                </Button>
+              </Link>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              {upcomingGoals.map((goal: any) => {
+                const progress = Math.min(
+                  (parseFloat(goal.currentValue || "0") / parseFloat(goal.targetValue || "1")) * 100,
+                  100
+                );
+                const daysLeft = Math.ceil(
+                  (new Date(goal.deadline).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+                );
+
+                return (
+                  <Card key={goal.id}>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-2">
+                          <Target className="h-5 w-5 text-blue-600" />
+                          <CardTitle className="text-base">{goal.title}</CardTitle>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm text-gray-600">
+                          <span>Progresso</span>
+                          <span className="font-semibold">{progress.toFixed(0)}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-blue-600 h-2 rounded-full transition-all"
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-500 pt-1">
+                          <span>
+                            {parseFloat(goal.currentValue || "0").toFixed(1)} / {parseFloat(goal.targetValue || "0").toFixed(1)} {goal.unit}
+                          </span>
+                          <span>
+                            {daysLeft > 0 ? `${daysLeft}d restantes` : "Vencido"}
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Quick Actions */}
         <div className="mt-8">
