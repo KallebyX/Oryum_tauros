@@ -253,8 +253,8 @@ async function seed() {
         name: "Fazenda Santa Rita",
         region: "Sul de Minas",
         state: "MG",
-        city: "Varginha",
-        totalArea: 250.5,
+        // sizeHectares é um inteiro no schema
+        sizeHectares: 250,
         farmType: "dairy",
         animalCount: 0,
       },
@@ -263,9 +263,9 @@ async function seed() {
         name: "Rancho Verde",
         region: "Triângulo Mineiro",
         state: "MG",
-        city: "Uberlândia",
-        totalArea: 180.0,
-        farmType: "beef",
+        sizeHectares: 180,
+        // 'beef' não existe no enum do schema; usar 'cattle' para fazendas de corte
+        farmType: "cattle",
         animalCount: 0,
       },
     ];
@@ -280,23 +280,28 @@ async function seed() {
       {
         farmId,
         name: "Lote A - Bezerras",
-        description: "Bezerras de 0 a 12 meses",
-        animalCount: 0,
-        createdAt: new Date(),
+        // animalType deve ser um dos: cattle, sheep, goat, buffalo
+        animalType: "cattle",
+        // phase deve ser um dos: cria, recria, engorda, confinamento, lactacao, seca
+        phase: "cria",
+        quantity: 0,
+        averageWeight: 0,
       },
       {
         farmId,
         name: "Lote B - Novilhas",
-        description: "Novilhas de 12 a 24 meses",
-        animalCount: 0,
-        createdAt: new Date(),
+        animalType: "cattle",
+        phase: "recria",
+        quantity: 0,
+        averageWeight: 0,
       },
       {
         farmId,
         name: "Lote C - Vacas em Lactação",
-        description: "Vacas produzindo leite",
-        animalCount: 0,
-        createdAt: new Date(),
+        animalType: "cattle",
+        phase: "lactacao",
+        quantity: 0,
+        averageWeight: 0,
       },
     ];
     
@@ -308,20 +313,20 @@ async function seed() {
     console.log("=== SEED: Criando Animais ===");
     const animalsData = [
       // Lote A - Bezerras
-      { farmId, batchId: batchIds[0], tag: "BRF001", name: "Estrela", breed: "Holandês", sex: "female", birthDate: new Date("2024-09-15"), weight: 85.5, status: "active" },
-      { farmId, batchId: batchIds[0], tag: "BRF002", name: "Luna", breed: "Holandês", sex: "female", birthDate: new Date("2024-08-20"), weight: 95.0, status: "active" },
-      { farmId, batchId: batchIds[0], tag: "BRF003", name: "Bella", breed: "Jersey", sex: "female", birthDate: new Date("2024-10-01"), weight: 78.3, status: "active" },
+      { farmId, batchId: batchIds[0], tagId: "BRF001", name: "Estrela", species: "cattle", breed: "Holandês", sex: "female", birthDate: new Date("2024-09-15"), birthWeight: 86, currentWeight: 86, status: "active" },
+      { farmId, batchId: batchIds[0], tagId: "BRF002", name: "Luna", species: "cattle", breed: "Holandês", sex: "female", birthDate: new Date("2024-08-20"), birthWeight: 95, currentWeight: 95, status: "active" },
+      { farmId, batchId: batchIds[0], tagId: "BRF003", name: "Bella", species: "cattle", breed: "Jersey", sex: "female", birthDate: new Date("2024-10-01"), birthWeight: 78, currentWeight: 78, status: "active" },
       
       // Lote B - Novilhas
-      { farmId, batchId: batchIds[1], tag: "NOV001", name: "Princesa", breed: "Holandês", sex: "female", birthDate: new Date("2023-06-10"), weight: 380.0, status: "active" },
-      { farmId, batchId: batchIds[1], tag: "NOV002", name: "Rainha", breed: "Girolando", sex: "female", birthDate: new Date("2023-07-15"), weight: 350.5, status: "active" },
-      { farmId, batchId: batchIds[1], tag: "NOV003", name: "Flor", breed: "Jersey", sex: "female", birthDate: new Date("2023-05-20"), weight: 320.0, status: "active" },
+      { farmId, batchId: batchIds[1], tagId: "NOV001", name: "Princesa", species: "cattle", breed: "Holandês", sex: "female", birthDate: new Date("2023-06-10"), birthWeight: 380, currentWeight: 380, status: "active" },
+      { farmId, batchId: batchIds[1], tagId: "NOV002", name: "Rainha", species: "cattle", breed: "Girolando", sex: "female", birthDate: new Date("2023-07-15"), birthWeight: 351, currentWeight: 351, status: "active" },
+      { farmId, batchId: batchIds[1], tagId: "NOV003", name: "Flor", species: "cattle", breed: "Jersey", sex: "female", birthDate: new Date("2023-05-20"), birthWeight: 320, currentWeight: 320, status: "active" },
       
       // Lote C - Vacas em Lactação
-      { farmId, batchId: batchIds[2], tag: "VAC001", name: "Mimosa", breed: "Holandês", sex: "female", birthDate: new Date("2021-03-12"), weight: 620.0, status: "active" },
-      { farmId, batchId: batchIds[2], tag: "VAC002", name: "Bonita", breed: "Holandês", sex: "female", birthDate: new Date("2020-11-25"), weight: 650.5, status: "active" },
-      { farmId, batchId: batchIds[2], tag: "VAC003", name: "Doceira", breed: "Girolando", sex: "female", birthDate: new Date("2021-01-08"), weight: 580.0, status: "active" },
-      { farmId, batchId: batchIds[2], tag: "VAC004", name: "Formosa", breed: "Jersey", sex: "female", birthDate: new Date("2020-09-30"), weight: 480.5, status: "active" },
+      { farmId, batchId: batchIds[2], tagId: "VAC001", name: "Mimosa", species: "cattle", breed: "Holandês", sex: "female", birthDate: new Date("2021-03-12"), birthWeight: 620, currentWeight: 620, status: "active" },
+      { farmId, batchId: batchIds[2], tagId: "VAC002", name: "Bonita", species: "cattle", breed: "Holandês", sex: "female", birthDate: new Date("2020-11-25"), birthWeight: 650, currentWeight: 650, status: "active" },
+      { farmId, batchId: batchIds[2], tagId: "VAC003", name: "Doceira", species: "cattle", breed: "Girolando", sex: "female", birthDate: new Date("2021-01-08"), birthWeight: 580, currentWeight: 580, status: "active" },
+      { farmId, batchId: batchIds[2], tagId: "VAC004", name: "Formosa", species: "cattle", breed: "Jersey", sex: "female", birthDate: new Date("2020-09-30"), birthWeight: 480, currentWeight: 480, status: "active" },
     ];
     
     const animalResults = await db.insert(animals).values(animalsData).$returningId();
@@ -336,12 +341,15 @@ async function seed() {
     for (let i = 0; i < animalIds.length; i++) {
       const animal = animalsData[i];
       const animalId = animalIds[i];
-      
+
+      // usar currentWeight se disponível, senão birthWeight
+      const baseWeight = (animal.currentWeight ?? animal.birthWeight ?? 0);
+
       // 3 pesagens nos últimos 3 meses
       weighingsData.push(
-        { animalId, weight: animal.weight * 0.85, date: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000), notes: "Pesagem inicial" },
-        { animalId, weight: animal.weight * 0.92, date: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000), notes: "Pesagem intermediária" },
-        { animalId, weight: animal.weight, date: new Date(), notes: "Pesagem atual" }
+        { animalId, weight: Math.round(baseWeight * 0.85), date: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000), notes: "Pesagem inicial" },
+        { animalId, weight: Math.round(baseWeight * 0.92), date: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000), notes: "Pesagem intermediária" },
+        { animalId, weight: Math.round(baseWeight), date: new Date(), notes: "Pesagem atual" }
       );
     }
     
@@ -358,19 +366,21 @@ async function seed() {
     for (let i = 0; i < lactatingCows.length; i++) {
       const animalId = lactatingCows[i];
       const baseProduction = 25 + Math.random() * 10; // 25-35 litros base
-      
+
       // Produção dos últimos 30 dias
       for (let day = 0; day < 30; day++) {
         const date = new Date(Date.now() - day * 24 * 60 * 60 * 1000);
         const morningLiters = baseProduction * (0.5 + Math.random() * 0.1);
         const eveningLiters = baseProduction * (0.5 + Math.random() * 0.1);
-        
+        const total = parseFloat((morningLiters + eveningLiters).toFixed(2));
+
         milkData.push({
           animalId,
+          farmId,
           date,
-          morningLiters: parseFloat(morningLiters.toFixed(2)),
-          eveningLiters: parseFloat(eveningLiters.toFixed(2)),
-          totalLiters: parseFloat((morningLiters + eveningLiters).toFixed(2)),
+          liters: total,
+          lactationDay: day + 1,
+          notes: "Registro automático de produção",
         });
       }
     }
@@ -426,10 +436,10 @@ async function seed() {
     // ==================== PASTAGENS ====================
     console.log("=== SEED: Criando Pastagens ===");
     const pasturesData = [
-      { farmId, name: "Pasto 1 - Brachiaria", area: 15.5, grassType: "Brachiaria Brizantha", capacity: 30, currentOccupancy: 12, status: "active", lastRotation: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000) },
-      { farmId, name: "Pasto 2 - Mombaça", area: 12.0, grassType: "Panicum maximum (Mombaça)", capacity: 25, currentOccupancy: 18, status: "active", lastRotation: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
-      { farmId, name: "Pasto 3 - Tanzânia", area: 18.3, grassType: "Panicum maximum (Tanzânia)", capacity: 35, currentOccupancy: 0, status: "resting", lastRotation: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000) },
-      { farmId, name: "Pasto 4 - Marandu", area: 20.0, grassType: "Brachiaria Brizantha cv. Marandu", capacity: 40, currentOccupancy: 25, status: "active", lastRotation: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000) },
+      { farmId, name: "Pasto 1 - Brachiaria", areaHectares: 16, grassType: "Brachiaria Brizantha", currentBatchId: null, rotationStartDate: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000), restPeriodDays: 30, status: "active" },
+      { farmId, name: "Pasto 2 - Mombaça", areaHectares: 12, grassType: "Panicum maximum (Mombaça)", currentBatchId: null, rotationStartDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), restPeriodDays: 30, status: "active" },
+      { farmId, name: "Pasto 3 - Tanzânia", areaHectares: 18, grassType: "Panicum maximum (Tanzânia)", currentBatchId: null, rotationStartDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000), restPeriodDays: 30, status: "resting" },
+      { farmId, name: "Pasto 4 - Marandu", areaHectares: 20, grassType: "Brachiaria Brizantha cv. Marandu", currentBatchId: null, rotationStartDate: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000), restPeriodDays: 30, status: "active" },
     ];
     
     await db.insert(pastures).values(pasturesData);
@@ -479,9 +489,9 @@ async function seed() {
       const animalId = animalIds[i];
       
       vaccinationsData.push(
-        { farmId, animalId, vaccine: "Febre Aftosa", date: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000), nextDueDate: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000), appliedBy: "Dr. Carlos Veterinário" },
-        { farmId, animalId, vaccine: "Raiva", date: new Date(Date.now() - 150 * 24 * 60 * 60 * 1000), nextDueDate: new Date(Date.now() + 215 * 24 * 60 * 60 * 1000), appliedBy: "Dr. Carlos Veterinário" },
-        { farmId, animalId, vaccine: "Brucelose", date: new Date(Date.now() - 200 * 24 * 60 * 60 * 1000), appliedBy: "Dr. Carlos Veterinário" }
+        { farmId, animalId, vaccineType: "Febre Aftosa", date: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000), nextDueDate: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000), veterinarian: "Dr. Carlos Veterinário" },
+        { farmId, animalId, vaccineType: "Raiva", date: new Date(Date.now() - 150 * 24 * 60 * 60 * 1000), nextDueDate: new Date(Date.now() + 215 * 24 * 60 * 60 * 1000), veterinarian: "Dr. Carlos Veterinário" },
+        { farmId, animalId, vaccineType: "Brucelose", date: new Date(Date.now() - 200 * 24 * 60 * 60 * 1000), veterinarian: "Dr. Carlos Veterinário" }
       );
     }
     
