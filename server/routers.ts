@@ -969,6 +969,48 @@ export const appRouter = router({
       return { success: true };
     }),
   }),
+  
+  goals: router({
+    create: protectedProcedure
+      .input(z.object({
+        farmId: z.number(),
+        type: z.enum(["milk_production", "gmd", "esg_score", "revenue", "expense_reduction"]),
+        title: z.string(),
+        targetValue: z.number(),
+        unit: z.string(),
+        deadline: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const goalId = await db.createGoal({
+          farmId: input.farmId,
+          type: input.type,
+          title: input.title,
+          targetValue: input.targetValue.toString(),
+          unit: input.unit,
+          deadline: input.deadline,
+        });
+        return { success: true, goalId };
+      }),
+    
+    list: protectedProcedure
+      .input(z.object({ farmId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getGoalsByFarmId(input.farmId);
+      }),
+    
+    updateProgress: protectedProcedure
+      .input(z.object({ goalId: z.number(), currentValue: z.number() }))
+      .mutation(async ({ input }) => {
+        return await db.updateGoalProgress(input.goalId, input.currentValue);
+      }),
+    
+    delete: protectedProcedure
+      .input(z.object({ goalId: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteGoal(input.goalId);
+        return { success: true };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

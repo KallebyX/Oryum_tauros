@@ -1,5 +1,6 @@
 import PDFDocument from "pdfkit";
 import { Response } from "express";
+import { ChartJSNodeCanvas } from "chartjs-node-canvas";
 
 interface FinancialData {
   totalIncome: number;
@@ -48,7 +49,7 @@ interface ProductionData {
 /**
  * Gerar relatório financeiro em PDF
  */
-export function generateFinancialReport(data: FinancialData, res: Response) {
+export async function generateFinancialReport(data: FinancialData, res: Response) {
   const doc = new PDFDocument({ margin: 50 });
 
   // Configurar headers HTTP
@@ -95,6 +96,42 @@ export function generateFinancialReport(data: FinancialData, res: Response) {
   doc.fillColor("black");
 
   doc.moveDown(2);
+
+  // Gerar gráfico de receitas vs despesas
+  try {
+    const chartWidth = 500;
+    const chartHeight = 300;
+    const chartCanvas = new ChartJSNodeCanvas({ width: chartWidth, height: chartHeight });
+    
+    const chartConfig: any = {
+      type: "bar",
+      data: {
+        labels: ["Receitas", "Despesas", "Saldo"],
+        datasets: [
+          {
+            label: "Valores (R$)",
+            data: [data.totalIncome, data.totalExpenses, data.balance],
+            backgroundColor: ["#10b981", "#ef4444", data.balance >= 0 ? "#3b82f6" : "#ef4444"],
+          },
+        ],
+      },
+      options: {
+        responsive: false,
+        plugins: {
+          legend: { display: false },
+          title: { display: true, text: "Resumo Financeiro" },
+        },
+      },
+    };
+    
+    const chartBuffer = await chartCanvas.renderToBuffer(chartConfig);
+    doc.moveDown();
+    doc.image(chartBuffer, { width: 400 });
+  } catch (error) {
+    console.error("Erro ao gerar gráfico:", error);
+  }
+
+  doc.addPage();
 
   // Tabela de Transações
   doc.fontSize(14).font("Helvetica-Bold").fillColor("black").text("Transações");

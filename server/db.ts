@@ -11,7 +11,8 @@ import {
   challenges, InsertChallenge, challengeProgress, InsertChallengeProgress,
   aiRecommendations, InsertAIRecommendation, planningTasks, InsertPlanningTask,
   notifications, InsertNotification,
-  subscriptions, InsertSubscription
+  subscriptions, InsertSubscription,
+  goals, InsertGoal
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -950,4 +951,52 @@ export async function markAllNotificationsAsRead(userId: number) {
     .update(notifications)
     .set({ read: true })
     .where(eq(notifications.userId, userId));
+}
+
+
+// ========== GOAL HELPERS ==========
+
+export async function createGoal(goal: InsertGoal) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(goals).values(goal);
+  return result[0].insertId;
+}
+
+export async function getGoalsByFarmId(farmId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(goals)
+    .where(eq(goals.farmId, farmId))
+    .orderBy(desc(goals.deadline));
+}
+
+export async function updateGoalProgress(goalId: number, currentValue: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Buscar meta
+  const goal = await db.select().from(goals).where(eq(goals.id, goalId)).limit(1);
+  if (goal.length === 0) throw new Error("Goal not found");
+
+  const targetValue = parseFloat(goal[0].targetValue);
+  const newStatus = currentValue >= targetValue ? "completed" : "active";
+
+  await db
+    .update(goals)
+    .set({ currentValue: currentValue.toString(), status: newStatus })
+    .where(eq(goals.id, goalId));
+
+  return { success: true, status: newStatus };
+}
+
+export async function deleteGoal(goalId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.delete(goals).where(eq(goals.id, goalId));
 }
