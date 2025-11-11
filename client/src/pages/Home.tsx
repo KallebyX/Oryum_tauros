@@ -11,11 +11,15 @@ import {
   Target,
   ArrowRight,
   Check,
+  Menu,
+  X,
 } from "lucide-react";
+import { useState } from "react";
 import { Link } from "wouter";
 
 export default function Home() {
   const { user, isAuthenticated } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen">
@@ -28,7 +32,9 @@ export default function Home() {
             )}
             <span className="font-bold text-xl text-primary">{APP_TITLE}</span>
           </div>
-          <nav className="flex items-center gap-6">
+          
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center gap-6">
             <Link href="#features" className="text-sm font-medium hover:text-primary transition-colors">
               Funcionalidades
             </Link>
@@ -48,7 +54,53 @@ export default function Home() {
               </a>
             )}
           </nav>
+
+          {/* Mobile Menu Button */}
+          <button
+            className="md:hidden p-2"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
         </div>
+
+        {/* Mobile Navigation */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t bg-white">
+            <nav className="container py-4 flex flex-col gap-4">
+              <Link
+                href="#features"
+                className="text-sm font-medium hover:text-primary transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Funcionalidades
+              </Link>
+              <Link
+                href="#benefits"
+                className="text-sm font-medium hover:text-primary transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Benefícios
+              </Link>
+              <Link
+                href="/pricing"
+                className="text-sm font-medium hover:text-primary transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Planos
+              </Link>
+              {isAuthenticated ? (
+                <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                  <Button className="w-full">Acessar Dashboard</Button>
+                </Link>
+              ) : (
+                <a href={getLoginUrl()} onClick={() => setMobileMenuOpen(false)}>
+                  <Button className="w-full">Entrar</Button>
+                </a>
+              )}
+            </nav>
+          </div>
+        )}
       </header>
 
       {/* Hero Section */}

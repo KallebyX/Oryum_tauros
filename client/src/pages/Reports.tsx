@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, Download, FileText, Loader2 } from "lucide-react";
-import { format } from "date-fns";
+import { format as formatDate } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -24,7 +24,7 @@ export default function Reports() {
 
   const farmId = user?.id || 1;
 
-  const handleDownload = async () => {
+  const handleDownload = async (format: 'pdf' | 'excel' = 'pdf') => {
     if (!reportType) {
       toast.error("Selecione o tipo de relatório");
       return;
@@ -35,26 +35,32 @@ export default function Reports() {
     try {
       let downloadUrl = "";
 
-      switch (reportType) {
-        case "financial":
-          const startParam = startDate ? format(startDate, "yyyy-MM-dd") : "";
-          const endParam = endDate ? format(endDate, "yyyy-MM-dd") : "";
-          downloadUrl = `/api/reports/financial/${farmId}?start=${startParam}&end=${endParam}`;
-          break;
+      if (format === 'excel') {
+        // Exportação Excel
+        downloadUrl = `/api/reports/excel/${reportType}/${farmId}`;
+      } else {
+        // Exportação PDF
+        switch (reportType) {
+          case "financial":
+            const startParam = startDate ? formatDate(startDate, "yyyy-MM-dd") : "";
+            const endParam = endDate ? formatDate(endDate, "yyyy-MM-dd") : "";
+            downloadUrl = `/api/reports/financial/${farmId}?start=${startParam}&end=${endParam}`;
+            break;
 
-        case "esg":
-          downloadUrl = `/api/reports/esg/${farmId}`;
-          break;
+          case "esg":
+            downloadUrl = `/api/reports/esg/${farmId}`;
+            break;
 
-        case "production":
-          downloadUrl = `/api/reports/production/${farmId}`;
-          break;
+          case "production":
+            downloadUrl = `/api/reports/production/${farmId}`;
+            break;
+        }
       }
 
       // Abrir URL em nova aba para download
       window.open(downloadUrl, "_blank");
       
-      toast.success("Relatório gerado com sucesso!");
+      toast.success(`Relatório ${format === 'excel' ? 'Excel' : 'PDF'} gerado com sucesso!`);
     } catch (error: any) {
       console.error("Error downloading report:", error);
       toast.error("Erro ao gerar relatório");
@@ -153,7 +159,7 @@ export default function Reports() {
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
                           {startDate ? (
-                            format(startDate, "dd/MM/yyyy", { locale: ptBR })
+                            formatDate(startDate, "dd/MM/yyyy", { locale: ptBR })
                           ) : (
                             <span>Selecione</span>
                           )}
@@ -184,7 +190,7 @@ export default function Reports() {
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
                           {endDate ? (
-                            format(endDate, "dd/MM/yyyy", { locale: ptBR })
+                            formatDate(endDate, "dd/MM/yyyy", { locale: ptBR })
                           ) : (
                             <span>Selecione</span>
                           )}
@@ -209,13 +215,32 @@ export default function Reports() {
               </div>
             )}
 
-            {/* Botão de Download */}
-            <div className="pt-4">
+            {/* Botões de Download */}
+            <div className="pt-4 flex gap-4">
               <Button
-                onClick={handleDownload}
+                onClick={() => handleDownload('pdf')}
                 disabled={isDownloading || !reportType}
-                className="w-full"
+                className="flex-1"
                 size="lg"
+              >
+                {isDownloading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Gerando...
+                  </>
+                ) : (
+                  <>
+                    <Download className="mr-2 h-4 w-4" />
+                    Baixar PDF
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={() => handleDownload('excel')}
+                disabled={isDownloading || !reportType}
+                className="flex-1"
+                size="lg"
+                variant="outline"
               >
                 {isDownloading ? (
                   <>

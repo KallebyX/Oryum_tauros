@@ -122,4 +122,52 @@ export function registerReportRoutes(app: Express) {
       res.status(500).json({ error: error.message });
     }
   });
+
+  // Exportação Excel - Financeiro
+  app.get('/api/reports/excel/financial/:farmId', async (req: Request, res: Response) => {
+    try {
+      const farmId = parseInt(req.params.farmId);
+      const { generateFinancialExcel } = await import('../_core/excelReports');
+      const buffer = await generateFinancialExcel(farmId);
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename=relatorio-financeiro-${farmId}.xlsx`);
+      res.send(buffer);
+    } catch (error: any) {
+      console.error('[Excel] Error generating financial report:', error);
+      res.status(500).json({ error: 'Failed to generate financial report' });
+    }
+  });
+
+  // Exportação Excel - Animais
+  app.get('/api/reports/excel/animals/:farmId', async (req: Request, res: Response) => {
+    try {
+      const farmId = parseInt(req.params.farmId);
+      const { generateAnimalsExcel } = await import('../_core/excelReports');
+      const buffer = await generateAnimalsExcel(farmId);
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename=relatorio-animais-${farmId}.xlsx`);
+      res.send(buffer);
+    } catch (error: any) {
+      console.error('[Excel] Error generating animals report:', error);
+      res.status(500).json({ error: 'Failed to generate animals report' });
+    }
+  });
+
+  // Exportação Excel - Produção
+  app.get('/api/reports/excel/production/:farmId', async (req: Request, res: Response) => {
+    try {
+      const farmId = parseInt(req.params.farmId);
+      const { generateProductionExcel } = await import('../_core/excelReports');
+      const buffer = await generateProductionExcel(farmId);
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename=relatorio-producao-${farmId}.xlsx`);
+      res.send(buffer);
+    } catch (error: any) {
+      console.error('[Excel] Error generating production report:', error);
+      res.status(500).json({ error: 'Failed to generate production report' });
+    }
+  });
 }

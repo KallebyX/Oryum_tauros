@@ -326,3 +326,36 @@
 ### GitHub Integration
 - [x] Fazer commit de todas as alterações
 - [x] Push para repositório KallebyX/Oryum_tauros
+
+
+## 🎯 Melhorias Finais - UX, Documentação e Testes
+
+### Responsividade do Header
+- [x] Adicionar menu hamburger para mobile
+- [x] Implementar drawer/sidebar mobile
+- [x] Testar navegação em dispositivos móveis
+
+### Documentação (README.md)
+- [x] Documentar arquitetura do sistema
+- [x] Adicionar instruções de instalação
+- [x] Listar variáveis de ambiente necessárias
+- [x] Incluir screenshots das funcionalidades
+- [x] Documentar estrutura de pastas
+- [x] Adicionar guia de contribuição
+
+### Testes Automatizados
+- [x] Configurar Vitest para testes unitários
+- [x] Testar cálculo de GMD
+- [x] Testar cálculo de score ESG
+- [x] Testar progresso de metas
+- [x] Configurar Playwright para testes E2E
+- [x] Testar fluxo de onboarding
+- [x] Testar criação de animais
+- [x] Testar registro de transações
+
+### Exportação Excel
+- [ ] Instalar biblioteca xlsx
+- [ ] Criar endpoint /api/reports/excel/financial
+- [ ] Criar endpoint /api/reports/excel/animals
+- [ ] Criar endpoint /api/reports/excel/production
+- [ ] Adicionar botões de exportação no frontend

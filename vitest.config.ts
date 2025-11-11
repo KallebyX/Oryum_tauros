@@ -5,6 +5,7 @@ export default defineConfig({
   root: path.resolve(import.meta.dirname),
   test: {
     environment: "node",
-    include: ["server/**/*.test.ts", "server/**/*.spec.ts"],
+    include: ["tests/unit/**/*.test.ts", "server/**/*.test.ts", "server/**/*.spec.ts"],
+    exclude: ["tests/e2e/**/*"],
   },
 });
