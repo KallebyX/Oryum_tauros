@@ -12,7 +12,8 @@ import {
   aiRecommendations, InsertAIRecommendation, planningTasks, InsertPlanningTask,
   notifications, InsertNotification,
   subscriptions, InsertSubscription,
-  goals, InsertGoal
+  goals, InsertGoal,
+  alerts, InsertAlert
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -999,4 +1000,43 @@ export async function deleteGoal(goalId: number) {
   if (!db) throw new Error("Database not available");
 
   await db.delete(goals).where(eq(goals.id, goalId));
+}
+
+
+// ========== ALERT HELPERS ==========
+
+export async function createAlert(alert: InsertAlert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const [result] = await db.insert(alerts).values(alert);
+  return result.insertId;
+}
+
+export async function getAlertsByFarmId(farmId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(alerts).where(eq(alerts.farmId, farmId)).orderBy(desc(alerts.createdAt));
+}
+
+export async function updateAlert(id: number, data: Partial<InsertAlert>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(alerts).set(data).where(eq(alerts.id, id));
+}
+
+export async function deleteAlert(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(alerts).where(eq(alerts.id, id));
+}
+
+export async function getActiveAlerts() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(alerts).where(eq(alerts.isActive, true));
 }

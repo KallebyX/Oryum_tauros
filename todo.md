@@ -396,3 +396,38 @@
 - [ ] Implementar insights e métricas globais
 - [ ] Adicionar monitoramento de problemas
 - [ ] Criar logs de atividades
+
+## 🚀 Implementação Final - Alertas, Budget, Admin e Header
+
+### Sistema de Alertas Customizáveis
+- [x] Adicionar funções CRUD de alertas ao db.ts
+- [ ] Criar router de alertas no routers.ts
+- [ ] Criar página /alerts com formulário
+- [ ] Adicionar lista de alertas com toggle on/off
+- [ ] Integrar verificação de alertas no job diário
+- [ ] Testar disparo de notificações
+
+### Planejamento Financeiro
+- [ ] Criar tabela de budgets no schema
+- [ ] Adicionar funções CRUD de budgets ao db.ts
+- [ ] Criar router de budgets no routers.ts
+- [ ] Criar página /budget
+- [ ] Implementar cadastro de orçamento anual
+- [ ] Adicionar gráficos de projeção vs realizado
+- [ ] Criar análise de break-even
+- [ ] Implementar simulador de cenários
+
+### Painel Admin Exclusivo
+- [ ] Criar página /admin com restrição de role
+- [ ] Implementar dashboard de clientes
+- [ ] Adicionar métricas Stripe (MRR, churn, LTV)
+- [ ] Criar painel de cobranças
+- [ ] Implementar logs de atividades
+- [ ] Adicionar alertas de problemas
+
+### Header Pós-Login
+- [ ] Criar componente AuthenticatedHeader
+- [ ] Adicionar navegação responsiva
+- [ ] Integrar NotificationBell
+- [ ] Adicionar menu de usuário
+- [ ] Aplicar em todas as páginas autenticadas
