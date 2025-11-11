@@ -148,3 +148,50 @@ export async function notifyLowStock(
     link: "/inventory",
   });
 }
+
+/**
+ * Notificar quando uma meta for concluída
+ */
+export async function notifyGoalCompleted(
+  userId: number,
+  goalTitle: string,
+  targetValue: string,
+  unit: string
+): Promise<boolean> {
+  return sendNotification({
+    userId,
+    title: "🎯 Meta Concluída!",
+    content: `Parabéns! Você atingiu a meta "${goalTitle}" de ${targetValue} ${unit}.`,
+    type: "success",
+    link: "/goals",
+  });
+}
+
+/**
+ * Notificar quando faltar 7 dias para o prazo de uma meta
+ */
+export async function notifyGoalDeadlineApproaching(
+  userId: number,
+  goalTitle: string,
+  daysLeft: number
+): Promise<boolean> {
+  return sendNotification({
+    userId,
+    title: "⏰ Meta Próxima do Prazo",
+    content: `A meta "${goalTitle}" vence em ${daysLeft} dias. Continue trabalhando para atingi-la!`,
+    type: "warning",
+    link: "/goals",
+  });
+}
+
+/**
+ * Helper para enviar notificação diretamente (usado internamente)
+ */
+async function notifyUser(userId: number, data: { title: string; content: string }) {
+  return sendNotification({
+    userId,
+    title: data.title,
+    content: data.content,
+    type: "info",
+  });
+}
